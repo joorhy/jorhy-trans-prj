@@ -1,0 +1,165 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{A44243A2-CD9B-433F-B108-363258E8B326}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>nvr</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110_xp</PlatformToolset>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110_xp</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <LibraryPath>D:\boost_1_56_0\lib32-msvc-11.0;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\common;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1\Include;D:\boost_1_56_0;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\baseclasses;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1\Samples\multimedia\directshow\common;C:\Program Files (x86)\Microsoft SDKs\Windows\v7.1\Include;D:\boost_1_56_0;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\boost_1_56_0\lib32-msvc-11.0;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../src/core;../../src/TransServer;../../src/faac;../../src/mysql</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4430 /wd4703 /D _CRT_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>libmysql.lib;ws2_32.lib;libnetclient.lib;libnetmedia.lib;hisi_voice_engine.lib;dhnetsdk.lib;StreamAnalyzer.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../../src/core;../../src/TransServer;../../src/faac</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4430 /wd4703 /D _CRT_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>ws2_32.lib;libnetclient.lib;libnetmedia.lib;hisi_voice_engine.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\faac\aacquant.c" />
+    <ClCompile Include="..\..\src\faac\backpred.c" />
+    <ClCompile Include="..\..\src\faac\bitstream.c" />
+    <ClCompile Include="..\..\src\faac\channels.c" />
+    <ClCompile Include="..\..\src\faac\fft.c" />
+    <ClCompile Include="..\..\src\faac\filtbank.c" />
+    <ClCompile Include="..\..\src\faac\frame.c" />
+    <ClCompile Include="..\..\src\faac\huffman.c" />
+    <ClCompile Include="..\..\src\faac\ltp.c" />
+    <ClCompile Include="..\..\src\faac\midside.c" />
+    <ClCompile Include="..\..\src\faac\psychkni.c" />
+    <ClCompile Include="..\..\src\faac\tns.c" />
+    <ClCompile Include="..\..\src\faac\util.c" />
+    <ClCompile Include="..\..\src\TransServer\AudioConvert.cpp" />
+    <ClCompile Include="..\..\src\TransServer\ClientManager.cpp" />
+    <ClCompile Include="..\..\src\TransServer\DahuaChannel.cpp" />
+    <ClCompile Include="..\..\src\TransServer\DahuaHost.cpp" />
+    <ClCompile Include="..\..\src\TransServer\DataBus.cpp" />
+    <ClCompile Include="..\..\src\TransServer\DeviceManager.cpp" />
+    <ClCompile Include="..\..\src\TransServer\HikSdkParser2.cpp" />
+    <ClCompile Include="..\..\src\TransServer\MySQLAccess.cpp" />
+    <ClCompile Include="..\..\src\TransServer\RtspClient.cpp" />
+    <ClCompile Include="..\..\src\TransServer\MsSqlServer.cpp" />
+    <ClCompile Include="..\..\src\TransServer\RTPStream.cpp" />
+    <ClCompile Include="..\..\src\TransServer\RtspHelper.cpp" />
+    <ClCompile Include="..\..\src\TransServer\TcpServer4Client.cpp" />
+    <ClCompile Include="..\..\src\TransServer\TCPServer4Dahua.cpp" />
+    <ClCompile Include="..\..\src\TransServer\TcpServer4Device.cpp" />
+    <ClCompile Include="..\..\src\TransServer\TcpServer4RTSP.cpp" />
+    <ClCompile Include="..\..\src\TransServer\TCPServer4Vdms.cpp" />
+    <ClCompile Include="..\..\src\TransServer\TransServer.cpp" />
+    <ClCompile Include="..\..\src\TransServer\VnChannel.cpp" />
+    <ClCompile Include="..\..\src\TransServer\VnHost.cpp" />
+    <ClCompile Include="..\..\src\TransServer\XlChannel.cpp" />
+    <ClCompile Include="..\..\src\TransServer\XlClient.cpp" />
+    <ClCompile Include="..\..\src\TransServer\XlHelper.cpp" />
+    <ClCompile Include="..\..\src\TransServer\XlHost.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\TransServer\AudioConvert.h" />
+    <ClInclude Include="..\..\src\TransServer\ClientManager.h" />
+    <ClInclude Include="..\..\src\TransServer\DahuaChannel.h" />
+    <ClInclude Include="..\..\src\TransServer\DahuaHost.h" />
+    <ClInclude Include="..\..\src\TransServer\DataBus.h" />
+    <ClInclude Include="..\..\src\TransServer\DataObj.h" />
+    <ClInclude Include="..\..\src\TransServer\DeviceManager.h" />
+    <ClInclude Include="..\..\src\TransServer\HikSdkParser2.h" />
+    <ClInclude Include="..\..\src\TransServer\MySQLAccess.h" />
+    <ClInclude Include="..\..\src\TransServer\RtspClient.h" />
+    <ClInclude Include="..\..\src\TransServer\MsSqlServer.h" />
+    <ClInclude Include="..\..\src\TransServer\RTPStream.h" />
+    <ClInclude Include="..\..\src\TransServer\RtspDef.h" />
+    <ClInclude Include="..\..\src\TransServer\RtspHelper.h" />
+    <ClInclude Include="..\..\src\TransServer\TcpServer4Client.h" />
+    <ClInclude Include="..\..\src\TransServer\TCPServer4Dahua.h" />
+    <ClInclude Include="..\..\src\TransServer\TcpServer4Device.h" />
+    <ClInclude Include="..\..\src\TransServer\TcpServer4RTSP.h" />
+    <ClInclude Include="..\..\src\TransServer\TCPServer4Vdms.h" />
+    <ClInclude Include="..\..\src\TransServer\VnChannel.h" />
+    <ClInclude Include="..\..\src\TransServer\VnHost.h" />
+    <ClInclude Include="..\..\src\TransServer\XlChannel.h" />
+    <ClInclude Include="..\..\src\TransServer\XlClient.h" />
+    <ClInclude Include="..\..\src\TransServer\XlClientCmdData.h" />
+    <ClInclude Include="..\..\src\TransServer\XlClientRespData.h" />
+    <ClInclude Include="..\..\src\TransServer\XlHelper.h" />
+    <ClInclude Include="..\..\src\TransServer\XlHost.h" />
+    <ClInclude Include="..\..\src\TransServer\XlHostCmdData.h" />
+    <ClInclude Include="..\..\src\TransServer\XlHostRespData.h" />
+    <ClInclude Include="..\..\src\TransServer\XlProtocol.h" />
+    <ClInclude Include="..\..\src\TransServer\x_base64.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
