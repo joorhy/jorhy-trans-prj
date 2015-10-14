@@ -91,6 +91,21 @@ struct CXlHostCmdData
 		};
 	};
 
+	typedef struct CmdTalkCmd
+	{
+		char account[32];   	///< 账户名
+		char equID[32];		///< 设备ID
+		int state;
+
+	};
+
+	typedef struct CmdTalkData
+	{
+		char account[32];	 	///< 账户名
+		char equID[32];		///< 设备ID
+		unsigned int size;		///< 数据区长度
+	};
+
 	CXlProtocol::CmdHeader cmdHeader;
 	union
 	{
@@ -101,6 +116,8 @@ struct CXlHostCmdData
 		CmdStopVod cmdStopVod;
 		CmdOnOffInfo cmdOnOffInfo;
 		CmdUpdateVodAck cmdUpdateVodAck;
+		CmdTalkCmd cmdTalkCmd;
+		CmdTalkData cmdTalkData;
 		char pData[1];
 	};
 	CXlProtocol::CmdTail tail;

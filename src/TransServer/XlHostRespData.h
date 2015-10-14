@@ -86,6 +86,21 @@ struct CXlHostRespData
 		time_t tmEnd;					/// 结束时间
 	};
 
+	typedef struct RespTalkCmd
+	{
+		char account[32];   	///< 账户名
+		char equID[32];		///< 设备ID
+		int state;
+
+	};
+
+	typedef struct RespTalkData
+	{
+		char account[32];	 	///< 账户名
+		char equID[32];		///< 设备ID
+		unsigned int size;		///< 数据区长度
+	};
+
 	CXlProtocol::CmdHeader respHeader;
 	union
 	{
@@ -100,6 +115,8 @@ struct CXlHostRespData
 		RespStopVod respStopVod;
 		RespOnOffInfo respOnOffInfo;
 		RespVodInfo respVodInfo;
+		RespTalkCmd respTalkCmd;
+		RespTalkData respTalkData;
 		char pData[1];
 	};
 };

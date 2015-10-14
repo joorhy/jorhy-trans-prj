@@ -190,6 +190,9 @@ j_result_t CXlHost::OnHandleRead(J_AsioDataBase *pAsioData)
 			break;
 		case CXlProtocol::xld_update_vod_info:
 			OnUpdateVodInfo(*pRespData);
+			break;			
+		case CXlProtocol::xld_talk_data_out:
+			OnTalkBackData(*pRespData);
 			break;
 		default:
 			OnResponse(*pRespData);
@@ -250,6 +253,9 @@ j_result_t CXlHost::OnRequest(const CXlClientCmdData &cmdData)
 			break;
 	case CXlProtocol::xlc_upload_file:
 			break;
+	case CXlProtocol::xlc_talk_cmd_out:
+	case CXlProtocol::xlc_talk_data_out:
+		break;
 	}
 	return J_OK;
 }
@@ -353,6 +359,11 @@ j_result_t CXlHost::OnRealData(const CXlHostRespData *respData)
 	}
 	TUnlock(m_channelLocker);
 
+	return J_OK;
+}
+
+j_result_t CXlHost::OnTalkBack(const CXlHostRespData &respData)
+{
 	return J_OK;
 }
 
@@ -769,6 +780,16 @@ j_result_t CXlHost::SendFile(const CXlClientCmdData &cmdData)
 		}
 	}
 
+	return J_OK;
+}
+
+j_result_t CXlHost::TalkBackCommand(const CXlClientCmdData &cmdData)
+{
+	return J_OK;
+}
+
+j_result_t CXlHost::TalkBackData(const CXlClientCmdData &cmdData)
+{
 	return J_OK;
 }
 

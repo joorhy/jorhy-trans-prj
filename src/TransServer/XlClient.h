@@ -51,6 +51,9 @@ private:
 	/// 数据传输
 	j_result_t SaveContext(const CXlClientCmdData &cmdData, j_boolean_t bSave);
 	j_result_t SaveFiles(const CXlClientCmdData &cmdData, j_boolean_t bSave);
+	/// 对讲
+	j_result_t TalkBackCommand(const CXlClientCmdData &cmdData);
+	j_result_t TalkBackData(const CXlClientCmdData &cmdData);
 
 private:
 	j_char_t m_userName[32];						//用户名

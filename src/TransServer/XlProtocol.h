@@ -90,6 +90,11 @@ struct CXlProtocol
 		//联络数据传输
 		xld_upload_file = 0x30,				///< 文件传输
 		xld_trans_context = 0x31,			///< 文本消息通讯
+		//对讲命令
+		xld_talk_data_in = 0x40,				///< 对讲数据
+		xld_talk_data_out = 0x41,				///< 对讲数据
+		xld_talk_cmd_in = 0x42,				///< 对讲请求
+		xld_talk_cmd_out = 0x43,				///< 发起对讲
 		//客户端之间通信
 
 		//异步消息及异常推送
@@ -97,19 +102,25 @@ struct CXlProtocol
 		//客户端在线心跳
 		xlc_heart_beat = 0x51,				///< 客户端在线心跳
 		//用户验证
-		xlc_login = 0x52,					///< 用户登录
+		xlc_login = 0x52,						///< 用户登录
 		xlc_logout = 0x53,					///< 注销登录
 		//实时报警
 		xlc_real_alarm = 0x60,				///< 实时报警信息使能
 		//实时视频
-		xlc_real_play = 0x70,				///< 实时视频播放
+		xlc_real_play = 0x70,					///< 实时视频播放
 		//远程回放
-		xlc_vod_play = 0x71,				///< 录像回放
+		xlc_vod_play = 0x71,					///< 录像回放
 		xlc_vod_download = 0x72,			///< 录像下载
 		//联络数据传输
-		xlc_trans_context = 0x80,			///< 发送文本消息
+		xlc_trans_context = 0x80,				///< 发送文本消息
 		xlc_upload_file = 0x81,				///< 文件传输
+		//对讲命令
+		xlc_talk_data_in = 0x90,				///< 对讲数据
+		xlc_talk_data_out = 0x91,				///< 对讲数据
+		xlc_talk_cmd_in = 0x92,				///< 对讲请求
+		xlc_talk_cmd_out = 0x93,				///< 发起对讲
 		//客户端之间通信
+		
 	};
 
 	struct CmdHeader

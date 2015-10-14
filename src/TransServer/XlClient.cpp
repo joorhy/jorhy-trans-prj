@@ -94,6 +94,12 @@ j_result_t CXlClient::OnHandleRead(J_AsioDataBase *pAsioData)
 			break;
 		case CXlProtocol::xlc_upload_file:
 			break;
+		case CXlProtocol::xlc_talk_cmd_out:
+			TalkBackCommand(*pCmdData);
+			break;
+		case CXlProtocol::xlc_talk_data_out:
+			TalkBackData(*pCmdData);
+			break;
 		default:
 			//assert(false);
 			SendRequest(*pCmdData);
@@ -402,5 +408,15 @@ j_result_t CXlClient::SaveFiles(const CXlClientCmdData &cmdData, j_boolean_t bSa
 		JoDataBaseObj->UpdateFileInfo(m_lUserID, m_strTitle.c_str(), "", m_transTargetMap);
 	}
 
+	return J_OK;
+}
+
+j_result_t CXlClient::TalkBackCommand(const CXlClientCmdData &cmdData)
+{
+	return J_OK;
+}
+
+j_result_t CXlClient::TalkBackData(const CXlClientCmdData &cmdData)
+{
 	return J_OK;
 }

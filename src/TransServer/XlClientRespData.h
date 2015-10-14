@@ -39,6 +39,21 @@ struct CXlClientRespData
 		double dGPSSpeed;
 	};
 
+	typedef struct RespTalkCmd
+	{
+		char account[32];   	///< 账户名
+		char equID[32];		///< 设备ID
+		int state;
+
+	};
+
+	typedef struct RespTalkData
+	{
+		char account[32];	 	///< 账户名
+		char equID[32];		///< 设备ID
+		unsigned int size;		///< 数据区长度
+	};
+
 	CXlProtocol::CmdHeader respHeader;
 	union
 	{
@@ -47,6 +62,8 @@ struct CXlClientRespData
 		RespLogout respLogout;
 		RespErrorCode respErrorCode;
 		RespAlarmInfo respAlarmInfo;
+		RespTalkCmd respTalkCmd;
+		RespTalkData respTalkData;
 		char pData[1];
 	};
 };

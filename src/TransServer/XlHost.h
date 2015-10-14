@@ -83,6 +83,9 @@ private:
 	j_result_t OnOnOffInfo(const CXlHostRespData &respData);
 	/// 更新录像信息
 	j_result_t OnUpdateVodInfo(const CXlHostRespData &respData);
+	/// 对讲数据
+	j_result_t OnTalkBackCommand(const CXlHostRespData &respData);
+	j_result_t OnTalkBackData(const CXlHostRespData &respData);
 	/// 请求返回处理
 	j_result_t OnResponse(const CXlHostRespData &respData);
 
@@ -99,6 +102,9 @@ private:
 	j_result_t SendContent(const CXlClientCmdData &cmdData);
 	/// 客户端发来的文件上传
 	j_result_t SendFile(const CXlClientCmdData &cmdData);
+	/// 客户端发来的对讲数据
+	j_result_t TalkBackCommand(const CXlClientCmdData &cmdData);
+	j_result_t TalkBackData(const CXlClientCmdData &cmdData);
 
 private:
 	void GetChannel(j_uint64_t channel);
