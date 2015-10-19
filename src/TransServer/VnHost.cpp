@@ -16,7 +16,7 @@
 #include "VnHost.h"
 #include "VnChannel.h"
 #include "XlProtocol.h"
-#include "XlClientCmdData.h"
+#include "XlDataBusDef.h"
 #include "netclientapi.h"
 #include "netmediaapi.h"
 
@@ -56,16 +56,16 @@ j_result_t CVnHost::CreateChannel(const j_int32_t nChannelNum, J_Obj *&pObj)
 	return J_OK;
 }
 
-j_result_t CVnHost::OnRequest(const CXlClientCmdData &cmdData)
+j_result_t CVnHost::OnRequest(const CXlDataBusInfo &cmdData)
 {
-	switch (cmdData.cmdHeader.cmd)
+	switch (cmdData.header.cmd)
 	{
 	case CXlProtocol::xlc_real_play:
-		if (cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_start)
+		if (cmdData.header.flag == CXlProtocol::xl_ctrl_start)
 		{
 			StartRealPlay(cmdData);
 		}
-		else if (cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_stop)
+		else if (cmdData.header.flag == CXlProtocol::xl_ctrl_stop)
 		{
 			StopRealPlay(cmdData);
 		}
@@ -75,15 +75,15 @@ j_result_t CVnHost::OnRequest(const CXlClientCmdData &cmdData)
 	return J_OK;
 }
 
-j_result_t CVnHost::StartRealPlay(const CXlClientCmdData &cmdData)
+j_result_t CVnHost::StartRealPlay(const CXlDataBusInfo &cmdData)
 {
 	j_result_t nResult = J_UNKNOW;
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.cmdRealPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.xlcCmdRealPlay.channel);
 	if (it == m_channelMap.end())
 	{
 		J_Obj *pObj = NULL;
-		CreateChannel(cmdData.cmdRealPlay.channel, pObj);
+		CreateChannel(cmdData.xlcCmdRealPlay.channel, pObj);
 		if (pObj != NULL)
 		{
 			J_Channel *pChannel = dynamic_cast<J_Channel *>(pObj);
@@ -102,17 +102,17 @@ j_result_t CVnHost::StartRealPlay(const CXlClientCmdData &cmdData)
 	return nResult;
 }
 
-j_result_t CVnHost::StopRealPlay(const CXlClientCmdData &cmdData)
+j_result_t CVnHost::StopRealPlay(const CXlDataBusInfo &cmdData)
 {
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.cmdRealPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.xlcCmdRealPlay.channel);
 	if (it != m_channelMap.end())
 	{
 		--(it->second.nRef);
 		if (it->second.nRef == 0)
 		{
 			J_Obj *pObj = NULL;
-			CreateChannel(cmdData.cmdRealPlay.channel, pObj);
+			CreateChannel(cmdData.xlcCmdRealPlay.channel, pObj);
 			if (pObj != NULL)
 			{
 				J_Channel *pChannel = dynamic_cast<J_Channel *>(pObj);
@@ -121,7 +121,7 @@ j_result_t CVnHost::StopRealPlay(const CXlClientCmdData &cmdData)
 					pChannel->CloseStream(cmdData);
 				}
 			}
-			ReleaseChannel(cmdData.cmdRealPlay.channel);
+			ReleaseChannel(cmdData.xlcCmdRealPlay.channel);
 		}
 		else
 		{

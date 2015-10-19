@@ -39,6 +39,8 @@ const char *g_ini_file = ".//TranServer.ini";
 int main(int argc, char **argv)
 {
 	///初始化平台
+	UINT loc_Result = GetPrivateProfileInt("platform", "enable", 0, g_ini_file);
+
 	if (GetPrivateProfileInt("platform", "enable", 0, g_ini_file) == 1)
 	{
 		if (g_vdmsServer.StartServer(g_ini_file) != J_OK)
@@ -64,7 +66,7 @@ int main(int argc, char **argv)
 		char strDbAddr[16] = { 0 };
 		char strDbUser[32] = { 0 };
 		char strDbPassWord[32] = { 0 };
-		int nDbPort = GetPrivateProfileInt("data_base", "port", 1433, g_ini_file);
+		int nDbPort = GetPrivateProfileInt("data_base", "port", 3306, g_ini_file);
 		GetPrivateProfileString("data_base", "addr", "10.0.0.123", strDbAddr, sizeof(strDbAddr), g_ini_file);
 		GetPrivateProfileString("data_base", "user", "root", strDbUser, sizeof(strDbUser), g_ini_file);
 		GetPrivateProfileString("data_base", "password", "123456", strDbPassWord, sizeof(strDbPassWord), g_ini_file);

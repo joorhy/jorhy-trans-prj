@@ -90,7 +90,7 @@ void CTcpServer4Vdms::StartDevAlarm()
 		iCount++;
 	}
 
-	if (m_lAlarmHaneld == NULL)
+	if (m_lAlarmHaneld == NULL) 
 	{
 		NETCLIENT_VAOpenVehiAlarm(&m_lAlarmHaneld);
 		NETCLIENT_VASetAlarmDevice(m_lAlarmHaneld, pGPSDevInfo, nDeviceCount);

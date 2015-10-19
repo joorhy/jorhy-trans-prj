@@ -32,6 +32,19 @@ CClientManager::~CClientManager()
 	m_timer.Destroy();
 }
 
+
+/***********************************************************************************************************
+ * 程序创建：刘进朝                     程序修改:赵进军
+ * 函数功能：客户端登录
+ * 参数说明：
+ * pUserName：用户名
+ *   pPasswd：密码
+ *    nForce：
+ *      nRet：
+ *   pClient：
+ * 注意事项：null
+ * 修改日期：2015/10/09 18:00:00
+ ***********************************************************************************************************/
 j_result_t CClientManager::Login(const char *pUserName, const char *pPasswd, int nForce, int &nRet, J_Client *pClient)
 {
 	if (JoDataBaseObj->Login(pUserName, pPasswd, nForce, nRet) == J_OK)
@@ -46,7 +59,6 @@ j_result_t CClientManager::Login(const char *pUserName, const char *pPasswd, int
 
 		TUnlock(m_lockerUser);
 	}
-
 	return J_OK;
 }
 
@@ -132,7 +144,7 @@ void CClientManager::CheckClient()
 {
 	CXAsio::LockSlice();
 	ClientMap::iterator it = m_clientMap.begin();
-	for (; it!=m_clientMap.end(); it++)
+	for (; it != m_clientMap.end(); it++)
 	{
 		J_Client *pClient = it->second;
 		if (!pClient->IsReady())

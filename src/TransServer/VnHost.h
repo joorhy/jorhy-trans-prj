@@ -36,13 +36,13 @@ public:
 	virtual j_result_t GetHostId(j_string_t &strDevId) { strDevId = m_strHostId; return J_OK; }
 	virtual j_result_t OnHandleRead(J_AsioDataBase *pAsioData) { return J_OK; }
 	virtual j_result_t OnHandleWrite(J_AsioDataBase *pAsioData) { return J_OK; }
-	virtual j_result_t OnRequest(const CXlClientCmdData &cmdData);
+	virtual j_result_t OnRequest(const CXlDataBusInfo &cmdData);
 
 private:
 	/// ¿Í»§¶Ë·¢À´µÄÇëÇóÊµÊ±ÊÓÆµ
-	j_result_t StartRealPlay(const CXlClientCmdData &cmdData);
+	j_result_t StartRealPlay(const CXlDataBusInfo &cmdData);
 	/// ¿Í»§¶Ë·¢À´µÄÍ£Ö¹ÊµÊ±ÊÓÆµ
-	j_result_t StopRealPlay(const CXlClientCmdData &cmdData);
+	j_result_t StopRealPlay(const CXlDataBusInfo &cmdData);
 
 private:
 	j_string_t m_strHostId;

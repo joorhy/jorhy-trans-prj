@@ -244,7 +244,7 @@ j_result_t  CSqlServerAccess::UpdateFileInfo(j_int32_t nFileId, j_int32_t nState
 	return J_OK;
 }
 
-j_result_t CSqlServerAccess::UpdateDevInfo(const CXlHostRespData::RespHostInfo &hostInfo, bool bOnline)
+j_result_t CSqlServerAccess::UpdateDevInfo(const CXlDataBusInfo::XldRespHostInfo &hostInfo, bool bOnline)
 {
 	try 
 	{
@@ -319,7 +319,7 @@ j_result_t CSqlServerAccess::UpdateDevInfo(const CXlHostRespData::RespHostInfo &
 	return J_OK;
 }
 
-j_result_t CSqlServerAccess::GetDevInfo(CXlHostRespData::RespHostInfo &hostInfo)
+j_result_t CSqlServerAccess::GetDevInfo(CXlDataBusInfo::XldRespHostInfo &hostInfo)
 {
 	try 
 	{
@@ -341,7 +341,7 @@ j_result_t CSqlServerAccess::GetDevInfo(CXlHostRespData::RespHostInfo &hostInfo)
 	return J_OK;
 }
 
-j_result_t CSqlServerAccess::InsertAlarmInfo(const char *pHostId, const CXlHostRespData::RespAlarmInfo& alarmInfo)
+j_result_t CSqlServerAccess::InsertAlarmInfo(const char *pHostId, const CXlDataBusInfo::XldRespAlarmInfo& alarmInfo)
 {
 	try 
 	{

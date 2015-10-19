@@ -21,12 +21,15 @@
 #include "ClientManager.h"
 #include "TcpServer4Device.h"
 #include "DataBus.h"
-#include "XlHostCmdData.h"
+#include "XlDataBusDef.h"
+#include "x_md5.c"
 
 #include <iostream>
 #include <strstream> 
 
-extern CTcpServer4Device g_deviceServer;
+extern const char *g_ini_file;
+
+#define TIME_OUT_INTREVAL	120
 
 CXlHost::CXlHost(j_string_t strHostId, j_socket_t nSock)
 {
@@ -63,7 +66,7 @@ CXlHost::~CXlHost()
 		m_dataBuffer = NULL;
 	}
 
-	CXlHostRespData::RespHostInfo hostInfo = {0};
+	CXlDataBusInfo::XldRespHostInfo hostInfo = {0};
 	strcpy(hostInfo.hostId, m_hostId.c_str());
 	JoDataBaseObj->UpdateDevInfo(hostInfo, false);
 	JoDataBus->RegisterDevice(m_hostId, NULL);
@@ -96,12 +99,12 @@ j_result_t CXlHost::CreateChannel(const j_int32_t nChannelNum, J_Obj *&pObj)
 
 j_boolean_t CXlHost::IsReady()
 {
-	//if (time(0) - m_lastBreatTime > 120)
-	//{
-	//	m_bReady = false;
-	//	J_OS::LOGINFO("CXlHost::IsReady() TIME_OUT %d - %d", time(0) - m_lastBreatTime);
-	//}
-	m_bReady = true;
+	if (time(0) - m_lastBreatTime > TIME_OUT_INTREVAL)
+	{
+		m_bReady = false;
+		J_OS::LOGINFO("CXlHost::IsReady() TIME_OUT %d - %d", time(0) - m_lastBreatTime);
+	}
+	//m_bReady = true;
 	return m_bReady;
 }
 
@@ -152,12 +155,14 @@ j_result_t CXlHost::OnHandleRead(J_AsioDataBase *pAsioData)
 	}
 	else if (m_ioState == CXlProtocol::xl_read_data_state)
 	{
-		CXlHostRespData *pRespData = (CXlHostRespData *)m_readBuff;
-		if (CXlProtocol::xld_start_vod_download == pRespData->respHeader.cmd)
+		CXlDataBusInfo *pRespData = (CXlDataBusInfo *)m_readBuff;
+		//J_OS::LOGINFO("CXlHost read_data cmd = %d flag = %d", pRespData->header.cmd, pRespData->header.flag);
+		if (CXlProtocol::xld_start_vod_download == pRespData->header.cmd || CXlProtocol::xld_start_vod_play == pRespData->header.cmd)
 		{
-			J_OS::LOGINFO("read_data cmd = %d flag = %d", pRespData->respHeader.cmd, pRespData->respHeader.flag);
+			if (pRespData->header.flag != 2)
+				J_OS::LOGINFO("read_data cmd = %d flag = %d", pRespData->header.cmd, pRespData->header.flag);
 		}
-		switch (pRespData->respHeader.cmd)
+		switch (pRespData->header.cmd)
 		{
 		case CXlProtocol::xld_message:
 			OnMessage(*pRespData);
@@ -172,7 +177,7 @@ j_result_t CXlHost::OnHandleRead(J_AsioDataBase *pAsioData)
 			OnAlarmInfo(*pRespData);
 			break;
 		case CXlProtocol::xld_start_real_play:
-			assert(pRespData->respHeader.length + sizeof(CXlProtocol::CmdTail) == pAsioData->ioRead.finishedLen);
+			assert(pRespData->header.length + sizeof(CXlProtocol::CmdTail) == pAsioData->ioRead.finishedLen);
 			OnRealData(pRespData);
 			break;
 		case CXlProtocol::xld_start_vod_play:
@@ -188,9 +193,15 @@ j_result_t CXlHost::OnHandleRead(J_AsioDataBase *pAsioData)
 		case CXlProtocol::xld_get_on_off_log:
 			OnOnOffInfo(*pRespData);
 			break;
+		case CXlProtocol::xld_first_vod_timestamp:
+			OnDeleteVodInfo(*pRespData);
+			break;
 		case CXlProtocol::xld_update_vod_info:
 			OnUpdateVodInfo(*pRespData);
-			break;			
+			break;	
+		case CXlProtocol::xld_talk_cmd_out:
+			OnTalkBackCommand(*pRespData);
+			break;
 		case CXlProtocol::xld_talk_data_out:
 			OnTalkBackData(*pRespData);
 			break;
@@ -224,12 +235,12 @@ j_result_t CXlHost::OnHandleWrite(J_AsioDataBase *pAsioData)
 	return J_OK;
 }
 
-j_result_t CXlHost::OnRequest(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::OnRequest(const CXlDataBusInfo &cmdData)
 {
-	switch (cmdData.cmdHeader.cmd)
+	switch (cmdData.header.cmd)
 	{
 	case CXlProtocol::xlc_real_play:
-		if (cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_start)
+		if (cmdData.header.flag == CXlProtocol::xl_ctrl_start)
 		{
 			StartRealPlay(cmdData);
 		}
@@ -240,7 +251,7 @@ j_result_t CXlHost::OnRequest(const CXlClientCmdData &cmdData)
 		break;
 	case CXlProtocol::xlc_vod_play:
 	case CXlProtocol::xlc_vod_download:
-		if (cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_start)
+		if (cmdData.header.flag == CXlProtocol::xl_ctrl_start)
 		{
 			StartVod(cmdData);
 		}
@@ -250,82 +261,83 @@ j_result_t CXlHost::OnRequest(const CXlClientCmdData &cmdData)
 		}
 		break;
 	case CXlProtocol::xlc_trans_context:
-			break;
+		SendContent(cmdData);
+		break;
 	case CXlProtocol::xlc_upload_file:
-			break;
+		SendFile(cmdData);
+		break;
 	case CXlProtocol::xlc_talk_cmd_out:
+		TalkBackCommand(cmdData);
+		break;
 	case CXlProtocol::xlc_talk_data_out:
+		TalkBackData(cmdData);
 		break;
 	}
 	return J_OK;
 }
 
-j_result_t CXlHost::OnMessage(const CXlHostRespData &cmdData)
+j_result_t CXlHost::OnMessage(const CXlDataBusInfo &cmdData)
 {
-	CXlClientRespData data = { 0 };
-	data.respHeader = cmdData.respHeader;
-	memcpy(&data.respHeader, &cmdData.respHeader, sizeof(CXlClientRespData::RespMessage));
-
-	JoDataBus->OnMessage(m_hostId, data);
+	JoDataBus->OnMessage(m_hostId, cmdData);
 	return J_OK;
 }
 
-j_result_t CXlHost::OnHeartBeat(const CXlHostRespData &cmdData)
+j_result_t CXlHost::OnHeartBeat(const CXlDataBusInfo &cmdData)
 {
 	m_lastBreatTime = time(0);
 	return J_OK;
 }
 
-j_result_t CXlHost::OnPrepare(const CXlHostRespData &respData)
+j_result_t CXlHost::OnPrepare(const CXlDataBusInfo &respData)
 {
-	CXlHostCmdData hostCmdData = {0};
+	CXlDataBusInfo hostCmdData = {0};
 	time_t logLastTime = JoDataBaseObj->GetDevLogLastTime(m_hostId.c_str());
 	if (logLastTime == 0)
 	{
-		hostCmdData.cmdOnOffInfo.tmStart = -1;
-		hostCmdData.cmdOnOffInfo.tmEnd = -1;
+		hostCmdData.xldCmdOnOffInfo.tmStart = -1;
+		hostCmdData.xldCmdOnOffInfo.tmEnd = -1;
 	}
 	else
 	{
-		hostCmdData.cmdOnOffInfo.tmStart = logLastTime;
-		hostCmdData.cmdOnOffInfo.tmEnd = -1;
+		hostCmdData.xldCmdOnOffInfo.tmStart = logLastTime;
+		hostCmdData.xldCmdOnOffInfo.tmEnd = -1;
 	}
 
-	CXlHelper::MakeRequest(CXlProtocol::xld_get_on_off_log,  CXlProtocol::xl_ctrl_start, JoDataBus->GetUniqueSeq(), hostCmdData.pData, sizeof(CXlHostCmdData::CmdOnOffInfo), m_dataBuffer);
+	CXlHelper::MakeRequest(CXlProtocol::xld_get_on_off_log,  CXlProtocol::xl_ctrl_start, JoDataBus->GetUniqueSeq(), hostCmdData.pData, sizeof(CXlDataBusInfo::XldCmdOnOffInfo), m_dataBuffer);
 
 	J_StreamHeader streamHeader = {0};
 	memset(&streamHeader, 0, sizeof(J_StreamHeader));
-	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostCmdData::CmdOnOffInfo) + sizeof(CXlProtocol::CmdTail);
+	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdOnOffInfo) + sizeof(CXlProtocol::CmdTail);
 	m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 	return J_OK;
 }
 
-j_result_t CXlHost::OnAlarmInfo(const CXlHostRespData &respData)
+j_result_t CXlHost::OnAlarmInfo(const CXlDataBusInfo &respData)
 {
 	if (m_bReady)
 	{
-		JoDataBaseObj->InsertAlarmInfo(m_hostId.c_str(), respData.respAlarmInfo);
+		JoDataBaseObj->InsertAlarmInfo(m_hostId.c_str(), respData.xldRespAlarmInfo);
 
-		CXlClientRespData data = { 0 };
-		data.respHeader = respData.respHeader;
-		strcpy(data.respAlarmInfo.szID, m_hostId.c_str());
-		data.respAlarmInfo.tmTimeStamp = respData.respAlarmInfo.tmTimeStamp;
-		data.respAlarmInfo.bAlarm = respData.respAlarmInfo.bAlarm;
-		data.respAlarmInfo.dLongitude = respData.respAlarmInfo.dLongitude;
-		data.respAlarmInfo.dLatitude = respData.respAlarmInfo.dLatitude;
-		data.respAlarmInfo.dGPSSpeed = respData.respAlarmInfo.dGPSSpeed;
+		CXlDataBusInfo data = { 0 };
+		data.header = respData.header;
+		strcpy(data.xlcRespAlarmInfo.szID, m_hostId.c_str());
+		data.xlcRespAlarmInfo.tmTimeStamp = respData.xldRespAlarmInfo.tmTimeStamp;
+		data.xlcRespAlarmInfo.bAlarm = respData.xldRespAlarmInfo.bAlarm;
+		data.xlcRespAlarmInfo.dLongitude = respData.xldRespAlarmInfo.dLongitude;
+		data.xlcRespAlarmInfo.dLatitude = respData.xldRespAlarmInfo.dLatitude;
+		data.xlcRespAlarmInfo.dGPSSpeed = respData.xldRespAlarmInfo.dGPSSpeed;
 		JoDataBus->OnMessage(m_hostId, data);
 	}
 
 	return J_OK;
 }
 
-j_result_t CXlHost::OnRealData(const CXlHostRespData *respData)
+j_result_t CXlHost::OnRealData(const CXlDataBusInfo *respData)
 {
 	TLock(m_channelLocker);
-	J_OS::LOGINFO("OnRealData channel = %d %d", respData->respRealData.channel & 0xFF, respData->respHeader.flag);
-	ChannelMap::iterator it = m_channelMap.find(respData->respRealData.channel & 0xFF);
+	//J_OS::LOGINFO("OnRealData channel = %d %d", respData->xldRespRealData.channel & 0xFF, respData->header.flag);
+	ChannelMap::iterator it = m_channelMap.find(respData->xldRespRealData.channel & 0xFF);
 	if (it != m_channelMap.end())
 	{
 		CXlChannel *pXlChannel = dynamic_cast<CXlChannel *>(it->second.pChannel);
@@ -334,15 +346,15 @@ j_result_t CXlHost::OnRealData(const CXlHostRespData *respData)
 			pXlChannel->InputData(CXlProtocol::xlc_real_play, respData);
 		}
 
-		if (respData->respHeader.flag == CXlProtocol::xl_ctrl_end || respData->respHeader.flag == CXlProtocol::xl_ctrl_stop)
+		if (respData->header.flag == CXlProtocol::xl_ctrl_end || respData->header.flag == CXlProtocol::xl_ctrl_stop)
 		{
 			if (pXlChannel != NULL)
 			{
-				CXlClientCmdData *cmdData = (CXlClientCmdData *)respData;
+				CXlDataBusInfo *cmdData = (CXlDataBusInfo *)respData;
 				pXlChannel->CloseStream(*cmdData);
 			}
 
-			if (respData->respHeader.flag == CXlProtocol::xl_ctrl_end)
+			if (respData->header.flag == CXlProtocol::xl_ctrl_end)
 			{
 				it->second.nRef--;
 				if (it->second.nRef < 0)
@@ -353,7 +365,7 @@ j_result_t CXlHost::OnRealData(const CXlHostRespData *respData)
 
 			if (it->second.nRef == 0)
 			{
-				ReleaseChannel(respData->respRealData.channel);
+				ReleaseChannel(respData->xldRespRealData.channel);
 			}
 		}
 	}
@@ -362,23 +374,32 @@ j_result_t CXlHost::OnRealData(const CXlHostRespData *respData)
 	return J_OK;
 }
 
-j_result_t CXlHost::OnTalkBack(const CXlHostRespData &respData)
+j_result_t CXlHost::OnTalkBackCommand(const CXlDataBusInfo &respData)
 {
+	const_cast<CXlDataBusInfo &>(respData).header.cmd = CXlProtocol::xlc_talk_cmd_in;
+	JoDataBus->RequestMessage(respData.xldRespTalkCmd.account, this, respData);
 	return J_OK;
 }
 
-j_result_t CXlHost::OnResponse(const CXlHostRespData &respData)
+j_result_t CXlHost::OnTalkBackData(const CXlDataBusInfo &respData)
 {
-	CXlClientRespData data = { 0 };
-	data.respHeader = respData.respHeader;
-	JoDataBus->Response(data);
+	const_cast<CXlDataBusInfo &>(respData).header.cmd = CXlProtocol::xlc_talk_data_in;
+	JoDataBus->RequestMessage(respData.xldRespTalkData.account, this, respData);
 	return J_OK;
 }
 
-j_result_t CXlHost::OnVodData(const CXlHostRespData *respData)
+j_result_t CXlHost::OnResponse(const CXlDataBusInfo &respData)
+{
+	JoDataBus->Response(respData);
+	return J_OK;
+}
+
+j_result_t CXlHost::OnVodData(const CXlDataBusInfo *respData)
 {
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(respData->respVodData.channel & 0xFF);
+
+	ChannelMap::iterator it = m_channelMap.find(respData->xldRespVodData.channel & 0xFF);
+	//J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->respVodData.channel & 0xFF);
 	if (it != m_channelMap.end())
 	{
 		CXlChannel *pXlChannel = dynamic_cast<CXlChannel *>(it->second.pChannel);
@@ -387,15 +408,17 @@ j_result_t CXlHost::OnVodData(const CXlHostRespData *respData)
 			pXlChannel->InputData(CXlProtocol::xl_ctrl_stream, respData);
 		}
 
-		if (respData->respHeader.flag == CXlProtocol::xl_ctrl_end || respData->respHeader.flag == CXlProtocol::xl_ctrl_stop)
+		if (respData->header.flag == CXlProtocol::xl_ctrl_end || respData->header.flag == CXlProtocol::xl_ctrl_stop)
 		{
+			J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->xldRespVodData.channel & 0xFF);
+			J_OS::LOGINFO("FIle TotleSize = %d", m_nDownloadSize);
 			if (pXlChannel != NULL)
 			{
-				CXlClientCmdData *cmdData = (CXlClientCmdData *)respData;
+				CXlDataBusInfo *cmdData = (CXlDataBusInfo *)respData;
 				pXlChannel->CloseVod(*cmdData);
 			}
 
-			if (respData->respHeader.flag == CXlProtocol::xl_ctrl_end)
+			if (respData->header.flag == CXlProtocol::xl_ctrl_end)
 			{
 				it->second.nRef--;
 				if (it->second.nRef < 0)
@@ -406,16 +429,25 @@ j_result_t CXlHost::OnVodData(const CXlHostRespData *respData)
 
 			if (it->second.nRef == 0)
 			{
-				ReleaseChannel(respData->respVodData.channel);
+				ReleaseChannel(respData->xldRespVodData.channel);
 			}
 		}
+		else
+		{
+			m_nDownloadSize += respData->header.length;
+		}
+	}
+	else
+	{
+		J_OS::LOGINFO("CXlHost::OnVodData Error");
+		J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->xldRespVodData.channel & 0xFF);
 	}
 	TUnlock(m_channelLocker);
 
 	return J_OK;
 }
 
-j_result_t CXlHost::OnConrrectTime(const CXlHostRespData &respData)
+j_result_t CXlHost::OnConrrectTime(const CXlDataBusInfo &respData)
 {
 	JoDataBus->RegisterDevice(m_hostId, this);
 	//JoDataBus->OnMessage(m_hostId, xlc_msg_host, xlc_host_connected);
@@ -429,47 +461,51 @@ j_result_t CXlHost::OnConrrectTime(const CXlHostRespData &respData)
 	return J_OK;
 }
 
-j_result_t CXlHost::OnHostInfo(const CXlHostRespData &respData)
+j_result_t CXlHost::OnHostInfo(const CXlDataBusInfo &respData)
 {
-	JoDataBaseObj->UpdateDevInfo(respData.respHostInfo, true);
+	JoDataBaseObj->UpdateDevInfo(respData.xldRespHostInfo, true);
 
-	CXlHostCmdData hostCmdData = { 0 };
-	hostCmdData.cmdConrrectTime.systime = time(0);
+	CXlDataBusInfo hostCmdData = { 0 };
+	hostCmdData.xldCmdConrrectTime.systime = time(0);
 	CXlHelper::MakeRequest(CXlProtocol::xld_conrrent_time, CXlProtocol::xl_ctrl_start, JoDataBus->GetUniqueSeq(), 
-		(char *)hostCmdData.pData, sizeof(CXlHostCmdData::CmdConrrectTime), m_dataBuffer);
+		(char *)hostCmdData.pData, sizeof(CXlDataBusInfo::XldCmdConrrectTime), m_dataBuffer);
 
 	J_StreamHeader streamHeader = { 0 };
-	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostCmdData::CmdConrrectTime) + sizeof(CXlProtocol::CmdTail);
+	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdConrrectTime) + sizeof(CXlProtocol::CmdTail);
 	m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 	return J_OK;
 }
 
-j_result_t CXlHost::OnOnOffInfo(const CXlHostRespData &respData)
+j_result_t CXlHost::OnOnOffInfo(const CXlDataBusInfo &respData)
 {
-	JoDataBaseObj->InsertLogInfo(m_hostId.c_str(), respData.respOnOffInfo.tmStart, respData.respOnOffInfo.tmEnd);
+	JoDataBaseObj->InsertLogInfo(m_hostId.c_str(), respData.xldRespOnOffInfo.tmStart, respData.xldRespOnOffInfo.tmEnd);
 	return J_OK;
 }
-
-j_result_t CXlHost::OnUpdateVodInfo(const CXlHostRespData &respData)
+j_result_t CXlHost::OnDeleteVodInfo(const CXlDataBusInfo &respData)
 {
-	JoDataBaseObj->InsertLogInfo(m_hostId.c_str(), respData.respVodInfo.tmStart, respData.respVodInfo.tmEnd);
+	JoDataBaseObj->SyncLogInfo(m_hostId.c_str(), respData.xldRespSyncVodInfo.tmFristItem);
+	return J_OK;
+}
+j_result_t CXlHost::OnUpdateVodInfo(const CXlDataBusInfo &respData)
+{
+	JoDataBaseObj->InsertLogInfo(m_hostId.c_str(), respData.xldRespVodInfo.tmStart, respData.xldRespVodInfo.tmEnd);
 
-	CXlHostCmdData hostCmdData = { 0 };
-	CXlHelper::MakeResponse(CXlProtocol::xld_update_vod_info, CXlProtocol::xl_ctrl_end, respData.respHeader.seq,
-		(char *)&hostCmdData.cmdUpdateVodAck, sizeof(CXlHostCmdData::CmdUpdateVodAck), m_dataBuffer);
+	CXlDataBusInfo hostCmdData = { 0 };
+	CXlHelper::MakeResponse(CXlProtocol::xld_update_vod_info, CXlProtocol::xl_ctrl_end, respData.header.seq,
+		(char *)&hostCmdData.xldCmdUpdateVodAck, sizeof(CXlDataBusInfo::XldCmdUpdateVodAck), m_dataBuffer);
 
 	J_StreamHeader streamHeader = { 0 };
-	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostCmdData::CmdUpdateVodAck) + sizeof(CXlProtocol::CmdTail);
+	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdUpdateVodAck) + sizeof(CXlProtocol::CmdTail);
 	m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);	
 
 	return J_OK;
 }
 
-j_result_t CXlHost::StartRealPlay(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::StartRealPlay(const CXlDataBusInfo &cmdData)
 {
 	j_result_t nResult = J_UNKNOW;
-	GetChannel(cmdData.cmdRealPlay.channel);
+	GetChannel(cmdData.xlcCmdRealPlay.channel);
 
 	std::vector<int>::iterator itChannel = m_vecChannel.begin();
 	for (; itChannel != m_vecChannel.end(); itChannel++)
@@ -489,19 +525,19 @@ j_result_t CXlHost::StartRealPlay(const CXlClientCmdData &cmdData)
 				}
 			}
 
-			ChannelMap::iterator itReal = m_channelRealMap.find(cmdData.cmdRealPlay.channel);
+			ChannelMap::iterator itReal = m_channelRealMap.find(cmdData.xlcCmdRealPlay.channel);
 			if (itReal == m_channelRealMap.end())
 			{
-				m_channelRealMap[cmdData.cmdRealPlay.channel] = ChannelInfo();
+				m_channelRealMap[cmdData.xlcCmdRealPlay.channel] = ChannelInfo();
 
-				CXlHostCmdData hostCmdData = { 0 };
-				strcpy(hostCmdData.cmdRealPlay.szID, m_hostId.c_str());
-				hostCmdData.cmdRealPlay.llChnStatus = cmdData.cmdRealPlay.channel;
-				CXlHelper::MakeRequest(CXlProtocol::xld_start_real_play, cmdData.cmdHeader.flag, cmdData.cmdHeader.seq,
-					(char *)&hostCmdData.cmdRealPlay, sizeof(CXlHostCmdData::CmdRealPlay), m_dataBuffer);
+				CXlDataBusInfo hostCmdData = { 0 };
+				strcpy(hostCmdData.xldCmdRealPlay.szID, m_hostId.c_str());
+				hostCmdData.xldCmdRealPlay.llChnStatus = cmdData.xlcCmdRealPlay.channel;
+				CXlHelper::MakeRequest(CXlProtocol::xld_start_real_play, cmdData.header.flag, cmdData.header.seq,
+					(char *)&hostCmdData.xldCmdRealPlay, sizeof(CXlDataBusInfo::XldCmdRealPlay), m_dataBuffer);
 
 				J_StreamHeader streamHeader = { 0 };
-				streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostCmdData::CmdRealPlay) + sizeof(CXlProtocol::CmdTail);
+				streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdRealPlay) + sizeof(CXlProtocol::CmdTail);
 				m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);	
 			}
 		}
@@ -521,9 +557,9 @@ j_result_t CXlHost::StartRealPlay(const CXlClientCmdData &cmdData)
 	return nResult;
 }
 
-j_result_t CXlHost::StopRealPlay(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::StopRealPlay(const CXlDataBusInfo &cmdData)
 {
-	GetChannel(cmdData.cmdRealPlay.channel);
+	GetChannel(cmdData.xlcCmdRealPlay.channel);
 
 	std::vector<int>::iterator itChannel = m_vecChannel.begin();
 	for (; itChannel != m_vecChannel.end(); itChannel++)
@@ -535,19 +571,19 @@ j_result_t CXlHost::StopRealPlay(const CXlClientCmdData &cmdData)
 			--(it->second.nRef);
 			if (it->second.nRef == 0)
 			{
-				ChannelMap::iterator itReal = m_channelRealMap.find(cmdData.cmdRealPlay.channel);
+				ChannelMap::iterator itReal = m_channelRealMap.find(cmdData.xlcCmdRealPlay.channel);
 				if (itReal != m_channelRealMap.end())
 				{
 					m_channelRealMap.erase(itReal);
 
-					CXlHostCmdData hostCmdData = { 0 };
-					strcpy(hostCmdData.cmdRealPlay.szID, m_hostId.c_str());
-					hostCmdData.cmdRealPlay.llChnStatus = cmdData.cmdRealPlay.channel;
-					CXlHelper::MakeRequest(CXlProtocol::xld_stop_real_play, cmdData.cmdHeader.flag, cmdData.cmdHeader.seq, 
-						(char *)&hostCmdData.cmdRealPlay, sizeof(CXlHostCmdData::CmdRealPlay), m_dataBuffer);
+					CXlDataBusInfo hostCmdData = { 0 };
+					strcpy(hostCmdData.xldCmdRealPlay.szID, m_hostId.c_str());
+					hostCmdData.xldCmdRealPlay.llChnStatus = cmdData.xlcCmdRealPlay.channel;
+					CXlHelper::MakeRequest(CXlProtocol::xld_stop_real_play, cmdData.header.flag, cmdData.header.seq, 
+						(char *)&hostCmdData.xldCmdRealPlay, sizeof(CXlDataBusInfo::XldCmdRealPlay), m_dataBuffer);
 
 					J_StreamHeader streamHeader = { 0 };
-					streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostCmdData::CmdRealPlay) + sizeof(CXlProtocol::CmdTail);
+					streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdRealPlay) + sizeof(CXlProtocol::CmdTail);
 					m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 				}
 			}
@@ -571,9 +607,9 @@ j_result_t CXlHost::StopRealPlay(const CXlClientCmdData &cmdData)
 	return J_OK;
 }
 
-j_result_t CXlHost::StartVod(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::StartVod(const CXlDataBusInfo &cmdData)
 {
-	GetChannel(cmdData.cmdStartVod.channel);
+	GetChannel(cmdData.xlcCmdStartVod.channel);
 
 	std::vector<int>::iterator itChannel = m_vecChannel.begin();
 	for (; itChannel != m_vecChannel.end(); itChannel++)
@@ -593,27 +629,28 @@ j_result_t CXlHost::StartVod(const CXlClientCmdData &cmdData)
 				}
 			}
 
-			std::map<GUIDKey, int>::iterator itVod = m_channelVodMap.find(cmdData.cmdStartVod.sessionId);
+			std::map<int, int>::iterator itVod = m_channelVodMap.find(cmdData.header.seq);
 			if (itVod == m_channelVodMap.end())
 			{
-				m_channelVodMap[cmdData.cmdStartVod.sessionId] = 0;
+				m_nDownloadSize = 0;
+				m_channelVodMap[cmdData.header.seq] = 0;
 
-				CXlHostCmdData hostCmdData = { 0 };
-				hostCmdData.cmdStartVod.session = cmdData.cmdStartVod.sessionId;
-				strcpy(hostCmdData.cmdStartVod.szID, m_hostId.c_str());
-				hostCmdData.cmdStartVod.llChnStatus = cmdData.cmdStartVod.channel;
-				hostCmdData.cmdStartVod.tmStartTime = cmdData.cmdStartVod.tmStartTime;
-				hostCmdData.cmdStartVod.tmEndTime = cmdData.cmdStartVod.tmEndTime;
+				CXlDataBusInfo hostCmdData = { 0 };
+				hostCmdData.xldCmdStartVod.session = cmdData.xlcCmdStartVod.sessionId;
+				strcpy(hostCmdData.xldCmdStartVod.szID, m_hostId.c_str());
+				hostCmdData.xldCmdStartVod.llChnStatus = cmdData.xlcCmdStartVod.channel;
+				hostCmdData.xldCmdStartVod.tmStartTime = cmdData.xlcCmdStartVod.tmStartTime;
+				hostCmdData.xldCmdStartVod.tmEndTime = cmdData.xlcCmdStartVod.tmEndTime;
 
 				CXlProtocol::CmdType cmd = CXlProtocol::xld_start_vod_play;
-				if (cmdData.cmdHeader.cmd == CXlProtocol::xlc_vod_download)
+				if (cmdData.header.cmd == CXlProtocol::xlc_vod_download)
 				{
 					cmd = CXlProtocol::xld_start_vod_download;
 				}
-				CXlHelper::MakeRequest(cmd, cmdData.cmdHeader.flag, cmdData.cmdHeader.seq, 
-					(char *)&hostCmdData.cmdStartVod, sizeof(CXlHostCmdData::CmdStartVod), m_dataBuffer);
+				CXlHelper::MakeRequest(cmd, cmdData.header.flag, cmdData.header.seq, 
+					(char *)&hostCmdData.xldCmdStartVod, sizeof(CXlDataBusInfo::XldCmdStartVod), m_dataBuffer);
 				J_StreamHeader streamHeader = { 0 };
-				streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostCmdData::CmdStartVod) + sizeof(CXlProtocol::CmdTail);
+				streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdStartVod) + sizeof(CXlProtocol::CmdTail);
 				m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 			}
 		}
@@ -633,9 +670,10 @@ j_result_t CXlHost::StartVod(const CXlClientCmdData &cmdData)
 	return J_OK;
 }
 
-j_result_t CXlHost::StopVod(const CXlClientCmdData &cmdData)
+///远程回放、视频文件下载手动停止
+j_result_t CXlHost::StopVod(const CXlDataBusInfo &cmdData)
 {
-	GetChannel(cmdData.cmdStartVod.channel);
+	GetChannel(cmdData.xlcCmdStartVod.channel);
 
 	std::vector<int>::iterator itChannel = m_vecChannel.begin();
 	for (; itChannel != m_vecChannel.end(); itChannel++)
@@ -647,24 +685,24 @@ j_result_t CXlHost::StopVod(const CXlClientCmdData &cmdData)
 			--(it->second.nRef);
 			if (it->second.nRef == 0)
 			{
-				std::map<GUIDKey, int>::iterator itVod = m_channelVodMap.find(cmdData.cmdStartVod.sessionId);
-				if (itVod == m_channelVodMap.end())
+				std::map<int, int>::iterator itVod = m_channelVodMap.find(cmdData.header.seq);
+				if (itVod != m_channelVodMap.end())
 				{
 					m_channelVodMap.erase(itVod);
 
-					CXlHostCmdData hostCmdData = { 0 };
-					hostCmdData.cmdStopVod.session = cmdData.cmdStopVod.sessionId;
-					strcpy(hostCmdData.cmdStopVod.szID, m_hostId.c_str());
-					hostCmdData.cmdStopVod.llChnStatus = cmdData.cmdStartVod.channel;
+					CXlDataBusInfo hostCmdData = { 0 };
+					hostCmdData.xldCmdStopVod.session = cmdData.xlcCmdStopVod.sessionId;
+					strcpy(hostCmdData.xldCmdStopVod.szID, m_hostId.c_str());
+					hostCmdData.xldCmdStopVod.llChnStatus = cmdData.xlcCmdStartVod.channel;
 					CXlProtocol::CmdType cmd = CXlProtocol::xld_start_vod_play;
-					if (cmdData.cmdHeader.cmd == CXlProtocol::xlc_vod_download)
+					if (cmdData.header.cmd == CXlProtocol::xlc_vod_download)
 					{
 						cmd = CXlProtocol::xld_start_vod_download;
 					}
-					CXlHelper::MakeRequest(cmd, cmdData.cmdHeader.flag, cmdData.cmdHeader.seq, 
-						(char *)&hostCmdData.cmdStopVod, sizeof(CXlHostCmdData::CmdStopVod), m_dataBuffer);
+					CXlHelper::MakeRequest(cmd, cmdData.header.flag, cmdData.header.seq, 
+						(char *)&hostCmdData.xldCmdStopVod, sizeof(CXlDataBusInfo::XldCmdStopVod), m_dataBuffer);
 					J_StreamHeader streamHeader = { 0 };
-					streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostCmdData::CmdStopVod) + sizeof(CXlProtocol::CmdTail);
+					streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdStopVod) + sizeof(CXlProtocol::CmdTail);
 					m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 				}
 				else
@@ -688,7 +726,7 @@ j_result_t CXlHost::StopVod(const CXlClientCmdData &cmdData)
 	return J_OK;
 }
 
-j_result_t CXlHost::SendContent(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::SendContent(const CXlDataBusInfo &cmdData)
 {
 	m_contextVec.clear();
 	JoDataBaseObj->GetContextList(m_hostId.c_str(), m_contextVec);
@@ -698,42 +736,54 @@ j_result_t CXlHost::SendContent(const CXlClientCmdData &cmdData)
 	int nHeaderLen = 0;
 	for (; it != m_contextVec.end(); it++)
 	{
+		/// MD5 initialize
+		MD5_CTX md5Ctx = { 0 };
+		MD5Init(&md5Ctx);
 		/// Send Context Header
-		nHeaderLen = sizeof(CXlHostCmdData::CmdContextInfo::ContextHeader) - 1 + it->header.nMessageTitleSize;
+		nHeaderLen = sizeof(CXlDataBusInfo::XldCmdContextInfo::XldContextHeader) - 1 + (*it)->header.nMessageTitleSize;
 		CXlHelper::MakeRequest(CXlProtocol::xld_trans_context, CXlProtocol::xl_ctrl_start, JoDataBus->GetUniqueSeq(), 
-			(char *)it->pData, nHeaderLen, m_dataBuffer);
+			(char *)((*it)->pData), nHeaderLen, m_dataBuffer);
 
 		memset(&streamHeader, 0, sizeof(J_StreamHeader));
 		streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + nHeaderLen + sizeof(CXlProtocol::CmdTail);
 		m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 		/// Send Context Info
+		MD5Update(&md5Ctx, (unsigned char *)((*it)->pContext), (*it)->header.ulMessageSize);
 		CXlHelper::MakeRequest(CXlProtocol::xld_trans_context, CXlProtocol::xl_ctrl_stream, JoDataBus->GetUniqueSeq(), 
-			(char *)it->pContext, it->header.ulMessageSize, m_dataBuffer);
+			(char *)((*it)->pContext), (*it)->header.ulMessageSize, m_dataBuffer);
 
 		memset(&streamHeader, 0, sizeof(J_StreamHeader));
-		streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + it->header.ulMessageSize + sizeof(CXlProtocol::CmdTail);
+		streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + (*it)->header.ulMessageSize + sizeof(CXlProtocol::CmdTail);
 		m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 		/// Send MD5 Code
+		unsigned char md5Buffer[16] = { 0 };
+		MD5Final(md5Buffer, &md5Ctx);
+
+		CXlHelper::MakeRequest(CXlProtocol::xld_trans_context, CXlProtocol::xl_ctrl_end, JoDataBus->GetUniqueSeq(),
+			(char *)md5Buffer, 16, m_dataBuffer);
+
+		memset(&streamHeader, 0, sizeof(J_StreamHeader));
+		streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + 16 + sizeof(CXlProtocol::CmdTail);
+		m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 		/// Free Memory
-		if (it->pData != NULL)
+		if ((*it)->pContext != NULL)
 		{
-			delete it->pData;
+			delete [](*it)->pContext;
 		}
 
-		if (it->pContext != NULL)
+		if ((*it)->pData != NULL)
 		{
-			delete it->pContext;
+			free(*it);
 		}
 	}
-
 	return J_OK;
 }
 
 
-j_result_t CXlHost::SendFile(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::SendFile(const CXlDataBusInfo &cmdData)
 {
 	m_fileInfoVec.clear();
 	JoDataBaseObj->GetFileInfoList(m_hostId.c_str(), m_fileInfoVec);
@@ -743,23 +793,31 @@ j_result_t CXlHost::SendFile(const CXlClientCmdData &cmdData)
 	int nHeaderLen = 0;
 	for (; it != m_fileInfoVec.end(); it++)
 	{
+		/// MD5 initialize
+		MD5_CTX md5Ctx = { 0 };
+		MD5Init(&md5Ctx);
 		/// Send File Info Header
-		nHeaderLen = sizeof(CXlHostCmdData::CmdFileInfo::FileInfoHeader) - 1 + it->header.nFileNameSize;
+		nHeaderLen = sizeof(CXlDataBusInfo::XldCmdFileInfo::XldFileInfoHeader) - 1 + (*it)->header.nFileNameSize;
 		CXlHelper::MakeRequest(CXlProtocol::xld_upload_file, CXlProtocol::xl_ctrl_start, JoDataBus->GetUniqueSeq(), 
-			(char *)it->pData, nHeaderLen, m_dataBuffer);
+			(char *)((*it)->pData), nHeaderLen, m_dataBuffer);
 
 		memset(&streamHeader, 0, sizeof(J_StreamHeader));
 		streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + nHeaderLen + sizeof(CXlProtocol::CmdTail);
 		m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 		/// Send File
-		FILE *fp = fopen(it->header.pData, "rb+");
+		char pFilePath[256] = { 0 };
+		GetPrivateProfileString("file_info", "path", "E:/FileRecord", pFilePath, sizeof(pFilePath), g_ini_file);
+		sprintf(pFilePath, "%s/%s", pFilePath, (*it)->pFileName);
+
+		FILE *fp = fopen(pFilePath, "rb+");
 		if (fp != NULL)
 		{
 			int nReadLen = 0;
 			char fileBuffer[2048] = {0};
 			while ((nReadLen = fread(fileBuffer, 1, 2048, fp)) > 0)
 			{
+				MD5Update(&md5Ctx, (unsigned char *)fileBuffer, nReadLen);
 				CXlHelper::MakeRequest(CXlProtocol::xld_upload_file, CXlProtocol::xl_ctrl_stream, JoDataBus->GetUniqueSeq(), 
 					(char *)fileBuffer, nReadLen, m_dataBuffer);
 
@@ -772,24 +830,52 @@ j_result_t CXlHost::SendFile(const CXlClientCmdData &cmdData)
 		}
 
 		/// Send MD5 Code
+		unsigned char md5Buffer[16] = { 0 };
+		MD5Final(md5Buffer, &md5Ctx);
+
+		CXlHelper::MakeRequest(CXlProtocol::xld_upload_file, CXlProtocol::xl_ctrl_end, JoDataBus->GetUniqueSeq(),
+			(char *)md5Buffer, 16, m_dataBuffer);
+
+		memset(&streamHeader, 0, sizeof(J_StreamHeader));
+		streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + 16 + sizeof(CXlProtocol::CmdTail);
+		m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 		/// Free Memory
-		if (it->pData != NULL)
+		if ((*it)->pFileName != NULL)
 		{
-			delete it->pData;
+			delete[](*it)->pFileName;
+		}
+
+		if ((*it)->pData != NULL)
+		{
+			free(*it);
 		}
 	}
 
 	return J_OK;
 }
 
-j_result_t CXlHost::TalkBackCommand(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::TalkBackCommand(const CXlDataBusInfo &cmdData)
 {
+	CXlHelper::MakeMessage(CXlProtocol::xld_talk_cmd_in, cmdData.header.flag, cmdData.header.seq, 
+		(char *)&cmdData.xlcCmdTalkCmd, sizeof(CXlDataBusInfo::XlcCmdTalkCmd), m_dataBuffer);
+
+	J_StreamHeader streamHeader = { 0 };
+	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdTalkCmd) + sizeof(CXlProtocol::CmdTail);
+	m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
+
 	return J_OK;
 }
 
-j_result_t CXlHost::TalkBackData(const CXlClientCmdData &cmdData)
+j_result_t CXlHost::TalkBackData(const CXlDataBusInfo &cmdData)
 {
+	CXlHelper::MakeRequest(CXlProtocol::xld_talk_data_in, cmdData.header.flag, cmdData.header.seq, 
+		(char *)&cmdData.xlcCmdTalkData, sizeof(CXlDataBusInfo::XlcCmdTalkData), m_dataBuffer);
+
+	J_StreamHeader streamHeader = { 0 };
+	streamHeader.dataLen = sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldCmdTalkData) + sizeof(CXlProtocol::CmdTail);
+	m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
+
 	return J_OK;
 }
 

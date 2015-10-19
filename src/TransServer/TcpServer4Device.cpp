@@ -10,7 +10,7 @@
 #include "DeviceManager.h"
 #include "XlHelper.h"
 #include "XlProtocol.h"
-#include "XlHostRespData.h"
+#include "XlDataBusDef.h"
 #include "DataBus.h"
 
 CTcpServer4Device::CTcpServer4Device()
@@ -80,7 +80,7 @@ j_result_t CTcpServer4Device::OnAccept(J_AsioDataBase *pAsioData, int nRet)
 	//pAsioReadData->ioHandle = pAsioData->ioAccept.subHandle;
 	pAsioReadData->ioUser = this;
 	pAsioReadData->ioCall = J_AsioDataBase::j_read_e;
-	CXlHelper::MakeNetData(pAsioReadData, pReponseBuff, sizeof(CXlProtocol::CmdHeader) + sizeof(CXlHostRespData::RespHostId) + sizeof(CXlProtocol::CmdTail));
+	CXlHelper::MakeNetData(pAsioReadData, pReponseBuff, sizeof(CXlProtocol::CmdHeader) + sizeof(CXlDataBusInfo::XldRespHostId) + sizeof(CXlProtocol::CmdTail));
 	m_asio.Read(nSocket, pAsioReadData);
 
 	return J_OK;
@@ -95,11 +95,11 @@ j_result_t CTcpServer4Device::OnRead(J_AsioDataBase *pAsioData, int nRet)
 	{
 		if (it->second.strHostId == "")
 		{
-			CXlHostRespData *respData = (CXlHostRespData *)pAsioData->ioRead.buf;
-			pHost = JoDeviceManager->CreateDevObj(1, respData->respHostId.hostId);
+			CXlDataBusInfo *respData = (CXlDataBusInfo *)pAsioData->ioRead.buf;
+			pHost = JoDeviceManager->CreateDevObj(1, respData->xldRespHostId.hostId);
 			if (pHost != NULL)
 			{
-				it->second.strHostId = respData->respHostId.hostId;
+				it->second.strHostId = respData->xldRespHostId.hostId;
 
 				pAsioData->ioUser = this;
 				pHost->OnHandleRead(pAsioData);
@@ -115,7 +115,7 @@ j_result_t CTcpServer4Device::OnRead(J_AsioDataBase *pAsioData, int nRet)
 				pHost->OnHandleRead(pAsioData);
 				if (pAsioData->ioRead.bufLen > 1000)
 				{
-					J_OS::LOGINFO("%d ", pAsioData->ioRead.bufLen);
+					J_OS::LOGDEBUG("CTcpServer4Device::OnRead %d ", pAsioData->ioRead.bufLen);
 				}
 				m_asio.Read(nSocket, pAsioData);
 			}

@@ -13,22 +13,34 @@ CDataBus::~CDataBus()
 	m_timer.Destroy();
 }
 
-j_result_t CDataBus::RegisterDevice(j_string_t strHostId, J_Host *pHost)
+j_result_t CDataBus::RegisterDevice(j_string_t strHostId, J_DataBus *pHost)
 {
 	TLock(m_locker);
-	HostMap::iterator it = m_hostMap.find(strHostId);
-	if (it != m_hostMap.end())
+	CXlDataBusInfo equipmentState = { 0 };
+	equipmentState.header.beginCode = 0xFF;
+	equipmentState.header.version = CXlProtocol::xl_frame_message;
+	equipmentState.header.seq = GetUniqueSeq();
+	equipmentState.header.flag = CXlProtocol::xl_ctrl_data;
+	equipmentState.header.cmd = CXlProtocol::xlc_dev_state;
+	equipmentState.header.length = sizeof(CXlDataBusInfo::XlcRespEquipmentState);
+	memcpy (equipmentState.xlcRespEquipmentState.szID, strHostId.c_str(), strlen(strHostId.c_str()));
+	ObjectMap::iterator it = m_objectMap.find(strHostId);
+	if (it != m_objectMap.end())
 	{
 		if (pHost == NULL)
 		{
-			m_hostMap.erase(it);
+			equipmentState.xlcRespEquipmentState.state = 0;
+			OnMessage(strHostId, equipmentState);
+			m_objectMap.erase(it);
 		}
 	}
 	else
 	{
 		if (pHost != NULL)
 		{
-			m_hostMap[strHostId] = pHost;
+			m_objectMap[strHostId] = pHost;
+			equipmentState.xlcRespEquipmentState.state = 1;
+			OnMessage(strHostId, equipmentState);
 		}
 	}
 	TUnlock(m_locker);
@@ -36,7 +48,7 @@ j_result_t CDataBus::RegisterDevice(j_string_t strHostId, J_Host *pHost)
 	return J_OK;
 }
 
-j_result_t CDataBus::ClearRequest(J_Client *pClient)
+j_result_t CDataBus::ClearRequest(J_DataBus *pClient)
 {
 	TLock(m_locker);
 	ResponseMap::iterator it = m_responseMap.begin();
@@ -62,7 +74,7 @@ j_result_t CDataBus::ClearRequest(J_Client *pClient)
 	return J_OK;
 }
 
-j_result_t CDataBus::SubscribeMsg(j_string_t strUserId, J_Client *pClient)
+j_result_t CDataBus::SubscribeMsg(j_string_t strUserId, J_DataBus *pClient)
 {
 	TLock(m_locker);
 	MessageMap::iterator it = m_messageMap.find(strUserId);
@@ -87,22 +99,23 @@ j_result_t CDataBus::SubscribeMsg(j_string_t strUserId, J_Client *pClient)
 	return J_OK;
 }
 
-j_result_t CDataBus::Request(j_string_t strHostId, J_Client *pClient, const CXlClientCmdData cmdData, j_uint32_t nTimeOut)
+j_result_t CDataBus::Request(j_string_t strHostId, J_DataBus *pClient, const CXlDataBusInfo cmdData, j_uint32_t nTimeOut)
 {
 	TLock(m_locker);
-	HostMap::iterator itHost = m_hostMap.find(strHostId);
-	if (itHost == m_hostMap.end())
+	ObjectMap::iterator itHost = m_objectMap.find(strHostId);
+	if (itHost == m_objectMap.end())
 	{
 		TUnlock(m_locker);
 		return J_NOT_EXIST;
 	}
 
-	RequestKey key(pClient, cmdData.cmdHeader.seq);
+	RequestKey key(pClient, cmdData.header.seq);
 	RequestMap::iterator it = m_requestMap.find(key);
 	if (it != m_requestMap.end())
 	{
-		if (cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_end || cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_stop)
+		if (cmdData.header.flag == CXlProtocol::xl_ctrl_end || cmdData.header.flag == CXlProtocol::xl_ctrl_stop)
 		{
+			const_cast<CXlDataBusInfo &>(cmdData).header.seq = it->second.nSeq;
 			itHost->second->OnRequest(cmdData);
 			//m_requestMap.erase(it);
 		}
@@ -112,12 +125,13 @@ j_result_t CDataBus::Request(j_string_t strHostId, J_Client *pClient, const CXlC
 		/// 请求数据
 		j_uint32_t nSeq = GetUniqueSeq();
 		m_responseMap[nSeq] = key;
-		const_cast<CXlClientCmdData &>(cmdData).cmdHeader.seq = nSeq;
+		const_cast<CXlDataBusInfo &>(cmdData).header.seq = nSeq;
 
 		RequestInfo info = {0};
 		info.pClient = pClient;
-		info.cmdHeader = cmdData.cmdHeader;
+		info.cmdHeader = cmdData.header;
 		info.nTimeOut = nTimeOut;
+		info.nSeq = nSeq;
 		m_requestMap[key] = info;
 
 		itHost->second->OnRequest(cmdData);
@@ -126,24 +140,39 @@ j_result_t CDataBus::Request(j_string_t strHostId, J_Client *pClient, const CXlC
 	return J_OK;
 }
 
-j_result_t CDataBus::Response(const CXlClientRespData &respData)
+j_result_t CDataBus::RequestMessage(j_string_t strHostId, J_DataBus *pClient, const CXlDataBusInfo &cmdData)
 {
 	TLock(m_locker);
-	ResponseMap::iterator it = m_responseMap.find(respData.respHeader.seq);
+	ObjectMap::iterator itHost = m_objectMap.find(strHostId);
+	if (itHost == m_objectMap.end())
+	{
+		TUnlock(m_locker);
+		return J_NOT_EXIST;
+	}
+
+	itHost->second->OnRequest(cmdData);
+	TUnlock(m_locker);
+	return J_OK;
+}
+
+j_result_t CDataBus::Response(const CXlDataBusInfo &respData)
+{
+	TLock(m_locker);
+	ResponseMap::iterator it = m_responseMap.find(respData.header.seq);
 	if (it != m_responseMap.end())
 	{
 		/// 删除请求记录
 		RequestMap::iterator itReqest = m_requestMap.find(it->second);
 		if (itReqest != m_requestMap.end()
-			&& (respData.respHeader.flag == CXlProtocol::xl_ctrl_end || respData.respHeader.flag == CXlProtocol::xl_ctrl_stop))
+			&& (respData.header.flag == CXlProtocol::xl_ctrl_end || respData.header.flag == CXlProtocol::xl_ctrl_stop))
 		{
 			m_requestMap.erase(itReqest);
 		}
 
 		/// 回复数据
-		const_cast<CXlClientRespData &>(respData).respHeader.seq = it->second.nSeq;
+		const_cast<CXlDataBusInfo &>(respData).header.seq = it->second.nSeq;
 		it->second.pClient->OnResponse(respData);
-		if (respData.respHeader.flag == CXlProtocol::xl_ctrl_end || respData.respHeader.flag == CXlProtocol::xl_ctrl_stop)
+		if (respData.header.flag == CXlProtocol::xl_ctrl_end || respData.header.flag == CXlProtocol::xl_ctrl_stop)
 		{
 			m_responseMap.erase(it);
 		}
@@ -153,7 +182,7 @@ j_result_t CDataBus::Response(const CXlClientRespData &respData)
 	return J_OK;
 }
 
-j_result_t CDataBus::OnMessage(j_string_t strHostId, const CXlClientRespData &respData)
+j_result_t CDataBus::OnMessage(j_string_t strHostId, const CXlDataBusInfo &respData)
 {
 	TLock(m_locker);
 	MessageMap::iterator it = m_messageMap.begin();
@@ -183,8 +212,8 @@ void CDataBus::CheckState()
 			/// 超时处理
 			m_requestTimeOutMap[it->first] = it->second.pClient;
 			/// 发送超时消息
-			CXlClientRespData respData = { 0 };
-			respData.respHeader = it->second.cmdHeader;
+			CXlDataBusInfo respData = { 0 };
+			respData.header = it->second.cmdHeader;
 
 			//it->second.pClient->OnResponse(respData);
 		}

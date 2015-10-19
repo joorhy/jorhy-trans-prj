@@ -34,8 +34,8 @@ public:
 	j_boolean_t IsReady() { return m_bIsReady; }
 	j_result_t OnHandleRead(J_AsioDataBase *pAsioData);
 	j_result_t OnHandleWrite(J_AsioDataBase *pAsioData);
-	j_result_t OnResponse(const CXlClientRespData &respData) { return J_OK; }
-	j_result_t OnMessage(j_string_t strHostId, const CXlClientRespData &respData) { return J_OK; }
+	j_result_t OnResponse(const CXlDataBusInfo &respData) { return J_OK; }
+	j_result_t OnMessage(j_string_t strHostId, const CXlDataBusInfo &respData) { return J_OK; }
 	j_result_t OnBroken();
 
 private:

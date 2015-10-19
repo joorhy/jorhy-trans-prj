@@ -1,6 +1,6 @@
 #include "DahuaChannel.h"
 #include "DahuaHost.h"
-#include "XlClientCmdData.h"
+#include "XlDataBusDef.h"
 
 CDahuaChannel::CDahuaChannel(J_Obj *pOwner, j_int32_t nChannel)
 {
@@ -15,9 +15,9 @@ CDahuaChannel::~CDahuaChannel()
 	ANA_Destroy(m_parser);
 }
 
-j_result_t CDahuaChannel::OpenStream(const CXlClientCmdData &cmdData)
+j_result_t CDahuaChannel::OpenStream(const CXlDataBusInfo &cmdData)
 {
-	AddRingBuffer(cmdData.cmdRealPlay.pBuffer);
+	AddRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
 	CDahuaHost *pHost = dynamic_cast<CDahuaHost *>(m_pHost);
 	if (pHost != NULL)
 	{
@@ -27,14 +27,14 @@ j_result_t CDahuaChannel::OpenStream(const CXlClientCmdData &cmdData)
 	return J_OK;
 }
 
-j_result_t CDahuaChannel::CloseStream(const CXlClientCmdData &cmdData)
+j_result_t CDahuaChannel::CloseStream(const CXlDataBusInfo &cmdData)
 {
 	if (m_llStreamHandle != 0)
 	{
 		CLIENT_StopRealPlay(m_llStreamHandle);
 		m_llStreamHandle = 0;
 	}
-	DelRingBuffer(cmdData.cmdRealPlay.pBuffer);
+	DelRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
 
 	return J_OK;
 }

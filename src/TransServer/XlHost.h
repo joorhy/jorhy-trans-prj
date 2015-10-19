@@ -17,37 +17,11 @@
 #define __XLHOST_H_
 #include "j_includes.h"
 #include "x_socket.h"
-#include "XlHostRespData.h"
-#include "XlHostCmdData.h"
-#include "XlClientCmdData.h"
+#include "XlDataBusDef.h"
+
 /// 本类的功能:  XL设备接入类
 class CXlHost : public J_Host
 {
-	struct GUIDKey
-	{
-		GUIDKey(GUID session)
-		{
-			memcpy(&_session, &session, sizeof(GUID));
-		}
-		bool operator < (const GUIDKey &other) const
-		{
-			if (other._session.Data1 == _session.Data1)
-			{
-				if (_session.Data2 == other._session.Data2)
-				{
-					if (_session.Data3 == other._session.Data3)
-					{
-						return ((((UINT64)_session.Data4) < ((UINT64)other._session.Data4)));
-					}
-					return _session.Data3 < other._session.Data3;
-				}
-				return _session.Data2 < other._session.Data2;
-			}
-			return _session.Data1 < other._session.Data1;
-		}
-		GUID _session;
-	};
-
 public:
 	CXlHost(j_string_t strHostId, j_socket_t nSock);
 	~CXlHost();
@@ -60,51 +34,53 @@ public:
 	virtual j_result_t GetHostId(j_string_t &strDevId);
 	virtual j_result_t OnHandleRead(J_AsioDataBase *pAsioData);
 	virtual j_result_t OnHandleWrite(J_AsioDataBase *pAsioData);
-	virtual j_result_t OnRequest(const CXlClientCmdData &cmdData);
+	virtual j_result_t OnRequest(const CXlDataBusInfo &cmdData);
 
 private:
 	/// 发送文本消息
-	j_result_t OnMessage(const CXlHostRespData &respData);
+	j_result_t OnMessage(const CXlDataBusInfo &respData);
 	/// 心跳消息
-	j_result_t OnHeartBeat(const CXlHostRespData &respData);
+	j_result_t OnHeartBeat(const CXlDataBusInfo &respData);
 	/// 服务端准备就绪
-	j_result_t OnPrepare(const CXlHostRespData &respData);
+	j_result_t OnPrepare(const CXlDataBusInfo &respData);
 	/// 报警消息(包括GPS)
-	j_result_t OnAlarmInfo(const CXlHostRespData &respData);
+	j_result_t OnAlarmInfo(const CXlDataBusInfo &respData);
 	/// 实时视频数据
-	j_result_t OnRealData(const CXlHostRespData *respData);
+	j_result_t OnRealData(const CXlDataBusInfo *respData);
 	/// 历史视频数据
-	j_result_t OnVodData(const CXlHostRespData *respData);
+	j_result_t OnVodData(const CXlDataBusInfo *respData);
 	/// 设置时钟的反馈信息
-	j_result_t OnConrrectTime(const CXlHostRespData &respData);
+	j_result_t OnConrrectTime(const CXlDataBusInfo &respData);
 	/// 获取设备信息的反馈信息
-	j_result_t OnHostInfo(const CXlHostRespData &respData);
+	j_result_t OnHostInfo(const CXlDataBusInfo &respData);
 	/// 获取日志的反馈信息
-	j_result_t OnOnOffInfo(const CXlHostRespData &respData);
+	j_result_t OnOnOffInfo(const CXlDataBusInfo &respData);
+	/// 删除录像信息
+	j_result_t OnDeleteVodInfo(const CXlDataBusInfo &respData);
 	/// 更新录像信息
-	j_result_t OnUpdateVodInfo(const CXlHostRespData &respData);
+	j_result_t OnUpdateVodInfo(const CXlDataBusInfo &respData);
 	/// 对讲数据
-	j_result_t OnTalkBackCommand(const CXlHostRespData &respData);
-	j_result_t OnTalkBackData(const CXlHostRespData &respData);
+	j_result_t OnTalkBackCommand(const CXlDataBusInfo &respData);
+	j_result_t OnTalkBackData(const CXlDataBusInfo &respData);
 	/// 请求返回处理
-	j_result_t OnResponse(const CXlHostRespData &respData);
+	j_result_t OnResponse(const CXlDataBusInfo &respData);
 
 private:
 	/// 客户端发来的请求实时视频
-	j_result_t StartRealPlay(const CXlClientCmdData &cmdData);
+	j_result_t StartRealPlay(const CXlDataBusInfo &cmdData);
 	/// 客户端发来的停止实时视频
-	j_result_t StopRealPlay(const CXlClientCmdData &cmdData);
+	j_result_t StopRealPlay(const CXlDataBusInfo &cmdData);
 	/// 客户端发来的请求历史视频
-	j_result_t StartVod(const CXlClientCmdData &cmdData);
+	j_result_t StartVod(const CXlDataBusInfo &cmdData);
 	/// 客户端发来的停止实时视频
-	j_result_t StopVod(const CXlClientCmdData &cmdData);
+	j_result_t StopVod(const CXlDataBusInfo &cmdData);
 	/// 客户端发来的文本信息
-	j_result_t SendContent(const CXlClientCmdData &cmdData);
+	j_result_t SendContent(const CXlDataBusInfo &cmdData);
 	/// 客户端发来的文件上传
-	j_result_t SendFile(const CXlClientCmdData &cmdData);
+	j_result_t SendFile(const CXlDataBusInfo &cmdData);
 	/// 客户端发来的对讲数据
-	j_result_t TalkBackCommand(const CXlClientCmdData &cmdData);
-	j_result_t TalkBackData(const CXlClientCmdData &cmdData);
+	j_result_t TalkBackCommand(const CXlDataBusInfo &cmdData);
+	j_result_t TalkBackData(const CXlDataBusInfo &cmdData);
 
 private:
 	void GetChannel(j_uint64_t channel);
@@ -129,10 +105,12 @@ private:
 	std::vector<int> m_vecChannel;
 	ChannelMap m_channelRealMap;
 
-	std::map<GUIDKey, int> m_channelVodMap;
+	std::map<int, int> m_channelVodMap;
 
 	HostContextVec m_contextVec;
 	HostFileInfoVec m_fileInfoVec;
+
+	int m_nDownloadSize;		// for test
 };
 
 #endif

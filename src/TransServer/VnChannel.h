@@ -31,8 +31,8 @@ public:
 
 public:
 	///J_Channel
-	virtual j_result_t OpenStream(const CXlClientCmdData &cmdData);
-	virtual j_result_t CloseStream(const CXlClientCmdData &cmdData);
+	virtual j_result_t OpenStream(const CXlDataBusInfo &cmdData);
+	virtual j_result_t CloseStream(const CXlDataBusInfo &cmdData);
 
 private:
 	static void CALLBACK FuncRealMsg(int nMsg, void *pUser)

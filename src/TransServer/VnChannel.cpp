@@ -17,7 +17,7 @@
 #include "netmediaapi.h"
 #include "GPSDeviceDef.h"
 #include "VnHost.h"
-#include "XlClientCmdData.h"
+#include "XlDataBusDef.h"
 
 CVnChannel::CVnChannel(J_Obj *pOwner, j_int32_t nChannel)
 	: m_lStreamHandle(NULL)
@@ -37,9 +37,9 @@ CVnChannel::~CVnChannel()
 	m_audioConvert.Deinit();
 }
 
-j_result_t CVnChannel::OpenStream(const CXlClientCmdData &cmdData)
+j_result_t CVnChannel::OpenStream(const CXlDataBusInfo &cmdData)
 {
-	AddRingBuffer(cmdData.cmdRealPlay.pBuffer);
+	AddRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
 
 	if (m_lStreamHandle == NULL)
 	{
@@ -66,7 +66,7 @@ j_result_t CVnChannel::OpenStream(const CXlClientCmdData &cmdData)
 	return J_OK;
 }
 
-j_result_t CVnChannel::CloseStream(const CXlClientCmdData &cmdData)
+j_result_t CVnChannel::CloseStream(const CXlDataBusInfo &cmdData)
 {
 	if (m_lStreamHandle != NULL)
 	{
@@ -76,7 +76,7 @@ j_result_t CVnChannel::CloseStream(const CXlClientCmdData &cmdData)
 		NETMEDIA_CloseRealPlay(m_lStreamHandle);
 		m_lStreamHandle = NULL;
 	}
-	DelRingBuffer(cmdData.cmdRealPlay.pBuffer);
+	DelRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
 
 	return J_OK;
 }

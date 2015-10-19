@@ -42,26 +42,27 @@
 #include "x_errtype.h"
 
 typedef bool 								j_boolean_t;
-typedef long long						j_time_t;
-typedef char									j_char_t;
+typedef long long						    j_time_t;
+typedef char								j_char_t;
 typedef int									j_result_t;
-typedef long									j_long_t;
-typedef void									j_void_t;
+typedef long								j_long_t;
+typedef void								j_void_t;
 
 typedef char 								j_int8_t;
-typedef unsigned char					j_uint8_t;
+typedef unsigned char					    j_uint8_t;
 typedef short 								j_int16_t;
-typedef unsigned short 				j_uint16_t;
-typedef int 									j_int32_t;
-typedef unsigned int 					j_uint32_t;
-typedef long long 						j_int64_t;
-typedef unsigned long long 			j_uint64_t;
-typedef float									j_float_t;
+typedef unsigned short 						j_uint16_t;
+typedef int 								j_int32_t;
+typedef unsigned int 					    j_uint32_t;
+typedef long long 						    j_int64_t;
+typedef unsigned long long 			        j_uint64_t;
+typedef float								j_float_t;
 
 typedef std::string							j_string_t;	
-typedef std::vector<j_string_t>		j_vec_str_t;
+typedef std::vector<j_string_t>		        j_vec_str_t;
+typedef std::wstring						j_wstring_t;
 
-typedef unsigned char					j_uuid_t[16];
+typedef unsigned char					    j_uuid_t[16];
 
 #ifdef WIN32
 #define j_thread_t						HANDLE

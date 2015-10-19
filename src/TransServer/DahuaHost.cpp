@@ -1,7 +1,7 @@
 #include "DahuaHost.h"
 #include "DahuaChannel.h"
 #include "XlProtocol.h"
-#include "XlClientCmdData.h"
+#include "XlDataBusDef.h"
 #include "dhnetsdk.h"
 
 CDahuaHost::CDahuaHost(j_string_t strHostId, j_int64_t llHandle)
@@ -49,34 +49,34 @@ j_result_t CDahuaHost::OnBroken()
 	return J_OK;
 }
 
-j_result_t CDahuaHost::OnRequest(const CXlClientCmdData &cmdData)
+j_result_t CDahuaHost::OnRequest(const CXlDataBusInfo &cmdData)
 {
-	switch (cmdData.cmdHeader.cmd)
+	switch (cmdData.header.cmd)
 	{
 		case CXlProtocol::xlc_real_play:
-		if (cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_start)
-		{
-			StartRealPlay(cmdData);
-		}
-		else if (cmdData.cmdHeader.flag == CXlProtocol::xl_ctrl_stop)
-		{
-			StopRealPlay(cmdData);
-		}
-		break;
+			if (cmdData.header.flag == CXlProtocol::xl_ctrl_start)
+			{
+				StartRealPlay(cmdData);
+			}
+			else if (cmdData.header.flag == CXlProtocol::xl_ctrl_stop)
+			{
+				StopRealPlay(cmdData);
+			}
+			break;
 	}
 
 	return J_OK;
 }
 
-j_result_t CDahuaHost::StartRealPlay(const CXlClientCmdData &cmdData)
+j_result_t CDahuaHost::StartRealPlay(const CXlDataBusInfo &cmdData)
 {
 	j_result_t nResult = J_UNKNOW;
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.cmdRealPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.xlcCmdRealPlay.channel);
 	if (it == m_channelMap.end())
 	{
 		J_Obj *pObj = NULL;
-		CreateChannel(cmdData.cmdRealPlay.channel, pObj);
+		CreateChannel(cmdData.xlcCmdRealPlay.channel, pObj);
 		if (pObj != NULL)
 		{
 			J_Channel *pChannel = dynamic_cast<J_Channel *>(pObj);
@@ -95,17 +95,17 @@ j_result_t CDahuaHost::StartRealPlay(const CXlClientCmdData &cmdData)
 	return nResult;
 }
 
-j_result_t CDahuaHost::StopRealPlay(const CXlClientCmdData &cmdData)
+j_result_t CDahuaHost::StopRealPlay(const CXlDataBusInfo &cmdData)
 {
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.cmdRealPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.xlcCmdRealPlay.channel);
 	if (it != m_channelMap.end())
 	{
 		--(it->second.nRef);
 		if (it->second.nRef == 0)
 		{
 			J_Obj *pObj = NULL;
-			CreateChannel(cmdData.cmdRealPlay.channel, pObj);
+			CreateChannel(cmdData.xlcCmdRealPlay.channel, pObj);
 			if (pObj != NULL)
 			{
 				J_Channel *pChannel = dynamic_cast<J_Channel *>(pObj);
@@ -114,7 +114,7 @@ j_result_t CDahuaHost::StopRealPlay(const CXlClientCmdData &cmdData)
 					pChannel->CloseStream(cmdData);
 				}
 			}
-			ReleaseChannel(cmdData.cmdRealPlay.channel);
+			ReleaseChannel(cmdData.xlcCmdRealPlay.channel);
 		}
 		else
 		{

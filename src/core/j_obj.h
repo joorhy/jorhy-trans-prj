@@ -30,6 +30,7 @@ struct J_Obj
 #include <windows.h>
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
+#include <iostream>
 #else
 #include <stdint.h>
 #include <pthread.h>

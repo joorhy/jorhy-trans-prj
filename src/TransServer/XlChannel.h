@@ -16,7 +16,7 @@
 #ifndef __XLCHANNEL_H_
 #define __XLCHANNEL_H_
 #include "j_includes.h"
-#include "XlHostRespData.h"
+#include "XlDataBusDef.h"
 #include "HikSdkParser2.h"
 
 /// 本类的功能:  流管理类
@@ -29,11 +29,11 @@ public:
 
 public:
 	///J_Channel
-	virtual j_result_t OpenStream(const CXlClientCmdData &cmdData);
-	virtual j_result_t CloseStream(const CXlClientCmdData &cmdData);
+	virtual j_result_t OpenStream(const CXlDataBusInfo &cmdData);
+	virtual j_result_t CloseStream(const CXlDataBusInfo &cmdData);
 	///J_Vod
-	virtual j_result_t OpenVod(const CXlClientCmdData &cmdData);
-	virtual j_result_t CloseVod(const CXlClientCmdData &cmdData);
+	virtual j_result_t OpenVod(const CXlDataBusInfo &cmdData);
+	virtual j_result_t CloseVod(const CXlDataBusInfo &cmdData);
 
 public:
 	/// 输入数据
@@ -41,7 +41,7 @@ public:
 	/// @param[in]				pData 数据区
 	/// @param[in]				nLen 数据长度 
 	/// @return					参见j_errtype.h 
-	j_result_t InputData(const j_int32_t nType, const CXlHostRespData *respData);
+	j_result_t InputData(const j_int32_t nType, const CXlDataBusInfo *respData);
 
 private:
 	int AddRingBuffer(CRingBuffer *pRingBuffer)

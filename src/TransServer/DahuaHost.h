@@ -33,15 +33,15 @@ public:
 	virtual j_result_t GetHostId(j_string_t &strDevId) { strDevId = m_hostId; return J_OK; }
 	virtual j_result_t OnHandleRead(J_AsioDataBase *pAsioData) { return 0; }
 	virtual j_result_t OnHandleWrite(J_AsioDataBase *pAsioData) { return 0; }
-	virtual j_result_t OnRequest(const CXlClientCmdData &cmdData);
+	virtual j_result_t OnRequest(const CXlDataBusInfo &cmdData);
 
 public:
 	j_int64_t GetLoginHandle() const { return m_llHandle;  }
 private:
 	/// 客户端发来的请求实时视频
-	j_result_t StartRealPlay(const CXlClientCmdData &cmdData);
+	j_result_t StartRealPlay(const CXlDataBusInfo &cmdData);
 	/// 客户端发来的停止实时视频
-	j_result_t StopRealPlay(const CXlClientCmdData &cmdData);
+	j_result_t StopRealPlay(const CXlDataBusInfo &cmdData);
 
 private:
 	j_int64_t m_llHandle;

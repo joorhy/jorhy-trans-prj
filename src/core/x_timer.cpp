@@ -100,6 +100,5 @@ void CTimer::OnTimer()
 		m_timerFunc(m_pUser);
 	}
 }
-
 }
 

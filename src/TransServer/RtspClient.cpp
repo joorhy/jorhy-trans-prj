@@ -16,7 +16,7 @@
 #include "RtspClient.h"
 #include "RtspDef.h"
 #include "DeviceManager.h"
-#include "XlClientCmdData.h"
+#include "XlDataBusDef.h"
 
 #include "VnHost.h"
 #include "VnChannel.h"
@@ -277,12 +277,12 @@ j_result_t CRTSPClient::Play()
 	J_Host *pHost = JoDeviceManager->GetDeviceObj(m_helper.GetHostID());
 	if (pHost != NULL)
 	{
-		CXlClientCmdData cmdData = { 0 };
-		cmdData.cmdHeader.cmd = CXlProtocol::xlc_real_play;
-		cmdData.cmdHeader.flag = CXlProtocol::xl_ctrl_start;
-		strcpy(cmdData.cmdRealPlay.hostId, m_helper.GetHostID().c_str());
-		cmdData.cmdRealPlay.channel = m_helper.GetChannel();
-		cmdData.cmdRealPlay.pBuffer = &m_ringBuffer;
+		CXlDataBusInfo cmdData = { 0 };
+		cmdData.header.cmd = CXlProtocol::xlc_real_play;
+		cmdData.header.flag = CXlProtocol::xl_ctrl_start;
+		strcpy(cmdData.xlcCmdRealPlay.hostId, m_helper.GetHostID().c_str());
+		cmdData.xlcCmdRealPlay.channel = m_helper.GetChannel();
+		cmdData.xlcCmdRealPlay.pBuffer = &m_ringBuffer;
 		nResult = pHost->OnRequest(cmdData);
 	}
 
@@ -295,12 +295,12 @@ j_result_t CRTSPClient::Stop()
 	J_Host *pHost = JoDeviceManager->GetDeviceObj(m_helper.GetHostID());
 	if (pHost != NULL)
 	{
-		CXlClientCmdData cmdData = { 0 };
-		cmdData.cmdHeader.cmd = CXlProtocol::xlc_real_play;
-		cmdData.cmdHeader.flag = CXlProtocol::xl_ctrl_stop;
-		strcpy(cmdData.cmdRealPlay.hostId, m_helper.GetHostID().c_str());
-		cmdData.cmdRealPlay.channel = m_helper.GetChannel();
-		cmdData.cmdRealPlay.pBuffer = &m_ringBuffer;
+		CXlDataBusInfo cmdData = { 0 };
+		cmdData.header.cmd = CXlProtocol::xlc_real_play;
+		cmdData.header.flag = CXlProtocol::xl_ctrl_stop;
+		strcpy(cmdData.xlcCmdRealPlay.hostId, m_helper.GetHostID().c_str());
+		cmdData.xlcCmdRealPlay.channel = m_helper.GetChannel();
+		cmdData.xlcCmdRealPlay.pBuffer = &m_ringBuffer;
 		nResult = pHost->OnRequest(cmdData);
 	}
 

@@ -19,11 +19,11 @@
 #include "j_includes.h"
 #include "x_socket.h"
 #include "x_timer.h"
-#include "XlClientCmdData.h"
+#include "XlDataBusDef.h"
 /// 本类的功能:  客户端业务处理类
 class CXlClient : public J_Client
 {
-	typedef std::vector<CXlClientCmdData> RequestVec;
+	typedef std::vector<CXlDataBusInfo> RequestVec;
 	typedef std::map<j_string_t, j_boolean_t> AlarmEnableMap;
 public:
 	CXlClient(j_socket_t nSock);
@@ -34,26 +34,29 @@ public:
 	j_boolean_t IsReady();
 	j_result_t OnHandleRead(J_AsioDataBase *pAsioData);
 	j_result_t OnHandleWrite(J_AsioDataBase *pAsioData);
-	j_result_t OnResponse(const CXlClientRespData &respData);
-	j_result_t OnMessage(j_string_t strHostId, const CXlClientRespData &respData);
+	j_result_t OnRequest(const CXlDataBusInfo &cmdData);
+	j_result_t OnResponse(const CXlDataBusInfo &respData);
+	j_result_t OnMessage(j_string_t strHostId, const CXlDataBusInfo &respData);
 	j_result_t OnBroken();
 
 private:
 	/// 请求处理函数
-	j_result_t OnLogin(const CXlClientCmdData &cmdData);
-	j_result_t OnLogout(const CXlClientCmdData &cmdData);
-	j_result_t OnHeartBeat(const CXlClientCmdData &cmdData);
-	j_result_t SendRequest(const CXlClientCmdData &cmdData);
+	j_result_t OnLogin(const CXlDataBusInfo &cmdData);
+	j_result_t OnLogout(const CXlDataBusInfo &cmdData);
+	j_result_t OnHeartBeat(const CXlDataBusInfo &cmdData);
+	j_result_t SendRequest(const CXlDataBusInfo &cmdData);
+	j_result_t OnTalkBackCommand(const CXlDataBusInfo &cmdData);
+	j_result_t OnTalkBackData(const CXlDataBusInfo &cmdData);
 	/// 订阅消息函数
-	j_result_t SaveRequest(const CXlClientCmdData &cmdData, j_boolean_t bSave);
-	j_result_t EnableAlarm(const CXlClientCmdData &cmdData, j_boolean_t bEnable);
+	j_result_t SaveRequest(const CXlDataBusInfo &cmdData, j_boolean_t bSave);
+	j_result_t EnableAlarm(const CXlDataBusInfo &cmdData, j_boolean_t bEnable);
 	j_result_t Recovery();
 	/// 数据传输
-	j_result_t SaveContext(const CXlClientCmdData &cmdData, j_boolean_t bSave);
-	j_result_t SaveFiles(const CXlClientCmdData &cmdData, j_boolean_t bSave);
+	j_result_t SaveContext(const CXlDataBusInfo &cmdData);
+	j_result_t SaveFiles(const CXlDataBusInfo &cmdData);
 	/// 对讲
-	j_result_t TalkBackCommand(const CXlClientCmdData &cmdData);
-	j_result_t TalkBackData(const CXlClientCmdData &cmdData);
+	j_result_t TalkBackCommand(const CXlDataBusInfo &cmdData);
+	j_result_t TalkBackData(const CXlDataBusInfo &cmdData);
 
 private:
 	j_char_t m_userName[32];						//用户名
@@ -78,7 +81,10 @@ private:
 	long m_lUserID;
 	j_string_t m_strTitle;
 	j_string_t m_strContext;
-	FILE *m_pFile;
+	FILE *m_pFile;									// 联络文件写文件对象
 	std::vector<j_string_t> m_transTargetMap;
+
+	int m_nFileTotleSize;
+	j_string_t m_FilePath;							// 用于缓存联络文件存放的地址
 };
 #endif // ~__XL_CLIENT_H_

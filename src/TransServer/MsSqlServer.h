@@ -16,7 +16,7 @@
 #ifndef __SQLSERVERACCESS_H_
 #define __SQLSERVERACCESS_H_
 #include "j_includes.h"
-#include "XlHostRespData.h"
+#include "XlDataBusDef.h"
 
 #import "msado15.dll" no_namespace rename("EOF", "EndOfFile")
 /// 本类的功能:  SqlServer数据库操作类
@@ -43,11 +43,11 @@ public:
 	/// 修改文件信息
 	j_result_t UpdateFileInfo(j_int32_t nFileId, j_int32_t nState, bool bFlag = true);
 	/// 修改设备信息
-	j_result_t UpdateDevInfo(const CXlHostRespData::RespHostInfo &hostInfo, bool bOnline);
+	j_result_t UpdateDevInfo(const CXlDataBusInfo::XldRespHostInfo &hostInfo, bool bOnline);
 	/// 获取设备信息
-	j_result_t GetDevInfo(CXlHostRespData::RespHostInfo &hostInfo);
+	j_result_t GetDevInfo(CXlDataBusInfo::XldRespHostInfo &hostInfo);
 	/// 增加报警信息
-	j_result_t InsertAlarmInfo(const char *pHostId, const CXlHostRespData::RespAlarmInfo& alarmInfo);
+	j_result_t InsertAlarmInfo(const char *pHostId, const CXlDataBusInfo::XldRespAlarmInfo& alarmInfo);
 	/// 获得设备日志的最近时间
 	time_t GetDevLogLastTime(const char *pHostId);
 	/// 增加日志信息

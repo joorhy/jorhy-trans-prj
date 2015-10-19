@@ -62,17 +62,17 @@ struct J_DbAccess : virtual public J_Obj
 	virtual j_result_t Release() = 0;
 };
 
-struct CXlClientCmdData;
+struct CXlDataBusInfo;
 struct J_Channel : virtual public J_Obj 
 {
 	///打开实时视频
 	///@param[in]		pRingBuffer 流队列对象
 	///@return			参见x_errtype.h
-	virtual j_result_t OpenStream(const CXlClientCmdData &cmdData) = 0;
+	virtual j_result_t OpenStream(const CXlDataBusInfo &cmdData) = 0;
 	///关闭实时视频
 	///@param[in]		pRingBuffer 流队列对象
 	///@return			参见x_errtype.h
-	virtual j_result_t CloseStream(const CXlClientCmdData &cmdData) = 0;
+	virtual j_result_t CloseStream(const CXlDataBusInfo &cmdData) = 0;
 };
 
 struct J_Vod : virtual public J_Obj 
@@ -81,12 +81,12 @@ struct J_Vod : virtual public J_Obj
 	///@param[in]		sessionId 回话ID
 	///@param[in]		pRingBuffer 流队列对象
 	///@return			参见x_errtype.h
-	virtual j_result_t OpenVod(const CXlClientCmdData &cmdData) = 0;
+	virtual j_result_t OpenVod(const CXlDataBusInfo &cmdData) = 0;
 	///关闭历史视频
 	///@param[in]		sessionId 回话ID
 	///@param[in]		pRingBuffer 流队列对象
 	///@return			参见x_errtype.h
-	virtual j_result_t CloseVod(const CXlClientCmdData &cmdData) = 0;
+	virtual j_result_t CloseVod(const CXlDataBusInfo &cmdData) = 0;
 };
 
 
@@ -99,7 +99,38 @@ struct ChannelInfo
 typedef std::map<j_int32_t, ChannelInfo> ChannelMap;
 
 struct J_Client;
-struct J_Host : virtual public J_Obj 
+struct J_DataBus : virtual public J_Obj 
+{
+	///判断设备是否就绪
+	///@return			true-就绪,false-未就绪
+	virtual j_boolean_t IsReady() = 0;
+	/// 用户请求及回复
+	/// @param[in][out]	pAsioData异步数据	
+	/// @return				参见j_errtype.h 
+	virtual j_result_t OnHandleRead(J_AsioDataBase *pAsioData) = 0;
+	/// 用户请求及回复
+	/// @param[in][out]	pAsioData异步数据	
+	/// @return				参见j_errtype.h 
+	virtual j_result_t OnHandleWrite(J_AsioDataBase *pAsioData) = 0;
+	///发送消息
+	///@param[in]			pData 数据
+	///@param[in]			nLen 数据长度
+	///@return				参见x_errtype.h
+	virtual j_result_t OnRequest(const CXlDataBusInfo &cmdData)  { return 0; }
+	/// 异步调用返回
+	/// @param[in]			pData异步调用返回数据	
+	/// @return				参见j_errtype.h 
+	virtual j_result_t OnResponse(const CXlDataBusInfo &respData)  { return 0; }
+	/// 消息
+	/// @param[in]			pData异步调用返回数据	
+	/// @return				参见j_errtype.h 
+	virtual j_result_t OnMessage(j_string_t strHostId, const CXlDataBusInfo &respData)  { return 0; }
+	/// 用户断线
+	/// @return				参见j_errtype.h 
+	virtual j_result_t OnBroken() = 0;
+};
+
+struct J_Host : virtual public J_DataBus 
 {
 	///获取通道对象
 	///@param[in]		nChannelNum 通道号 
@@ -121,61 +152,21 @@ struct J_Host : virtual public J_Obj
 
 		return J_OK;
 	}
-	///判断设备是否就绪
-	///@return			true-就绪,false-未就绪
-	virtual j_boolean_t IsReady() = 0;
+	
 	///获取设备ID
 	///@param[out]	strDevId 设备ID
 	///@return			参见x_errtype.h
 	virtual j_result_t GetHostId(j_string_t &strDevId) = 0;
-	///用户请求及回复
-	///@param[in][out]	pAsioData异步数据	
-	///@return				参见x_errtype.h
-	virtual j_result_t OnHandleRead(J_AsioDataBase *pAsioData) = 0;
-	///用户请求及回复
-	///@param[in][out]	pAsioData异步数据	
-	///@return				参见x_errtype.h
-	virtual j_result_t OnHandleWrite(J_AsioDataBase *pAsioData) = 0;
-	///发送消息
-	///@param[in]			pData 数据
-	///@param[in]			nLen 数据长度
-	///@return				参见x_errtype.h
-	virtual j_result_t OnRequest(const CXlClientCmdData &cmdData) = 0;
-	/// 设备断线
-	///@return			参见x_errtype.h
-	virtual j_result_t OnBroken() = 0;
 
 protected:
 	ChannelMap m_channelMap;
 	J_OS::TLocker_t m_channelLocker;
 };
 
-struct CXlClientRespData;
-struct J_Client : virtual public J_Obj 
+struct J_Client : virtual public J_DataBus 
 {
-	/// 获取状态
-	/// @return				客户端状态 
-	virtual j_boolean_t IsReady() = 0;
-	/// 用户请求及回复
-	/// @param[in][out]	pAsioData异步数据	
-	/// @return				参见j_errtype.h 
-	virtual j_result_t OnHandleRead(J_AsioDataBase *pAsioData) = 0;
-	/// 用户请求及回复
-	/// @param[in][out]	pAsioData异步数据	
-	/// @return				参见j_errtype.h 
-	virtual j_result_t OnHandleWrite(J_AsioDataBase *pAsioData) = 0;
-	/// 异步调用返回
-	/// @param[in]			pData异步调用返回数据	
-	/// @return				参见j_errtype.h 
-	virtual j_result_t OnResponse(const CXlClientRespData &respData) = 0;
-	/// 消息
-	/// @param[in]			pData异步调用返回数据	
-	/// @return				参见j_errtype.h 
-	virtual j_result_t OnMessage(j_string_t strHostId, const CXlClientRespData &respData) = 0;
-	/// 用户断线
-	/// @return				参见j_errtype.h 
-	virtual j_result_t OnBroken() = 0;
 };
+
 
 struct J_Service : virtual public J_Obj
 {
