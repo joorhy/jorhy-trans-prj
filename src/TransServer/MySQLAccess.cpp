@@ -251,7 +251,7 @@ j_result_t  CMySQLAccess::UpdateFileInfo(j_int32_t nFileId, j_int32_t nState, bo
 	return J_OK;
 }
 
-j_result_t CMySQLAccess::UpdateDevInfo(const CXlDataBusInfo::XldRespHostInfo &hostInfo, bool bOnline)
+j_result_t CMySQLAccess::UpdateDevInfo(const XlHostResponse::HostInfo &hostInfo, bool bOnline)
 {
 	if (!m_bConnected)
 	{
@@ -336,7 +336,7 @@ j_result_t CMySQLAccess::UpdateDevInfo(const CXlDataBusInfo::XldRespHostInfo &ho
 	return J_OK;
 }
 
-j_result_t CMySQLAccess::GetDevInfo(CXlDataBusInfo::XldRespHostInfo &hostInfo)
+j_result_t CMySQLAccess::GetDevInfo(XlHostResponse::HostInfo &hostInfo)
 {
 	if (!m_bConnected)
 	{
@@ -387,7 +387,7 @@ j_result_t CMySQLAccess::GetDevInfo(CXlDataBusInfo::XldRespHostInfo &hostInfo)
 	return J_OK;
 }
 
-j_result_t CMySQLAccess::InsertAlarmInfo(const char *pHostId, const CXlDataBusInfo::XldRespAlarmInfo& alarmInfo)
+j_result_t CMySQLAccess::InsertAlarmInfo(const char *pHostId, const XlHostResponse::AlarmInfo& alarmInfo)
 {
 	if (!m_bConnected)
 	{
@@ -1024,7 +1024,7 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 								}
 							}
 
-							CXlDataBusInfo::XldCmdContextInfo *pContentInfo = (CXlDataBusInfo::XldCmdContextInfo *)malloc(sizeof(CXlDataBusInfo::XldCmdContextInfo) + nTitleLen);
+							XlHostRequest::ContextInfo *pContentInfo = (XlHostRequest::ContextInfo *)malloc(sizeof(XlHostRequest::ContextInfo) + nTitleLen);
 							pContentInfo->header.lUserID = nUserID;
 							pContentInfo->header.lMessageID = nMessageID;
 							pContentInfo->header.nMessageTitleSize = nTitleLen;
@@ -1114,7 +1114,7 @@ j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &f
 								}
 							}
 
-							CXlDataBusInfo::XldCmdFileInfo *pFileInfo = (CXlDataBusInfo::XldCmdFileInfo *)malloc(sizeof(CXlDataBusInfo::XldCmdFileInfo) + nTitleLen);
+							XlHostRequest::FileInfo *pFileInfo = (XlHostRequest::FileInfo *)malloc(sizeof(XlHostRequest::FileInfo) + nTitleLen);
 							pFileInfo->header.lUserID = nUserID;
 							pFileInfo->header.nFileID = nFileID;
 							pFileInfo->header.nFileNameSize = nTitleLen;

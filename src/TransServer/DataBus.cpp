@@ -22,14 +22,14 @@ j_result_t CDataBus::RegisterDevice(j_string_t strHostId, J_DataBus *pHost)
 	equipmentState.header.seq = GetUniqueSeq();
 	equipmentState.header.flag = CXlProtocol::xl_ctrl_data;
 	equipmentState.header.cmd = CXlProtocol::xlc_dev_state;
-	equipmentState.header.length = sizeof(CXlDataBusInfo::XlcRespEquipmentState);
-	memcpy (equipmentState.xlcRespEquipmentState.szID, strHostId.c_str(), strlen(strHostId.c_str()));
+	equipmentState.header.length = sizeof(XlClientResponse::EquipmentState);
+	memcpy (equipmentState.clientResponse.equipmentState.szID, strHostId.c_str(), strlen(strHostId.c_str()));
 	ObjectMap::iterator it = m_objectMap.find(strHostId);
 	if (it != m_objectMap.end())
 	{
 		if (pHost == NULL)
 		{
-			equipmentState.xlcRespEquipmentState.state = 0;
+			equipmentState.clientResponse.equipmentState.state = 0;
 			OnMessage(strHostId, equipmentState);
 			m_objectMap.erase(it);
 		}
@@ -39,7 +39,7 @@ j_result_t CDataBus::RegisterDevice(j_string_t strHostId, J_DataBus *pHost)
 		if (pHost != NULL)
 		{
 			m_objectMap[strHostId] = pHost;
-			equipmentState.xlcRespEquipmentState.state = 1;
+			equipmentState.clientResponse.equipmentState.state = 1;
 			OnMessage(strHostId, equipmentState);
 		}
 	}

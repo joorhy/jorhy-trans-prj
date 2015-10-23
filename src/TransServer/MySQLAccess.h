@@ -43,11 +43,11 @@ public:
 	/// 修改文件信息
 	j_result_t UpdateFileInfo(j_int32_t nFileId, j_int32_t nState, bool bFlag = true);
 	/// 修改设备信息
-	j_result_t UpdateDevInfo(const CXlDataBusInfo::XldRespHostInfo &hostInfo, bool bOnline);
+	j_result_t UpdateDevInfo(const XlHostResponse::HostInfo &hostInfo, bool bOnline);
 	/// 获取设备信息
-	j_result_t GetDevInfo(CXlDataBusInfo::XldRespHostInfo &hostInfo);
+	j_result_t GetDevInfo(XlHostResponse::HostInfo &hostInfo);
 	/// 增加报警信息
-	j_result_t InsertAlarmInfo(const char *pHostId, const CXlDataBusInfo::XldRespAlarmInfo& alarmInfo);
+	j_result_t InsertAlarmInfo(const char *pHostId, const XlHostResponse::AlarmInfo& alarmInfo);
 	/// 获得设备日志的最近时间
 	time_t GetDevLogLastTime(const char *pHostId);
 	/// 增加日志信息

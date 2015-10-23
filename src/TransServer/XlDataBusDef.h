@@ -5,11 +5,10 @@
 
 #pragma pack(push)
 #pragma pack(1)
-struct CXlDataBusInfo
+
+namespace XlClientRequest
 {
-/***************************************************************************************/
-/************************for client request*********************************************/
-	struct XlcCmdLogin
+	struct Login
 	{
 		char userName[16];		///< 账户名
 		char passWord[16];  	///< 密码
@@ -17,19 +16,19 @@ struct CXlDataBusInfo
 		long version;			///< 客户端版本
 	};
 
-	struct XlcCmdRealAlarm
+	struct RealAlarm
 	{
 		char  hostId[32];		///< 设备ID
 	};
 
-	struct XlcCmdRealPlay
+	struct RealPlay
 	{
 		char hostId[32];		///< 设备ID
 		long long channel;		///< 通道号
 		CRingBuffer *pBuffer;
 	};
 
-	struct XlcCmdStartVod
+	struct StartVod
 	{
 		GUID sessionId;			///< 回话ID
 		char hostId[32];		///< 设备ID
@@ -39,7 +38,7 @@ struct CXlDataBusInfo
 		CRingBuffer *pBuffer;
 	};
 
-	struct XlcCmdStopVod
+	struct StopVod
 	{
 		GUID sessionId;			///< 回话ID
 		char hostId[32];		///< 设备ID
@@ -47,7 +46,7 @@ struct CXlDataBusInfo
 		CRingBuffer *pBuffer;
 	};
 
-	struct XlcCmdContextInfo
+	struct ContextInfo
 	{
 		long lUserID;                             ///< 用户ID 
 		int nMessageTitleSize;  				  ///< 消息标题长度
@@ -56,7 +55,7 @@ struct CXlDataBusInfo
 		char pData[1];
 	};
 
-	struct XlcCmdFileInfo
+	struct FileInfo
 	{
 		long lUserID;                         ///< 用户ID 
 		int nFileNameSize;  				  ///< 文件名称长度
@@ -65,7 +64,7 @@ struct CXlDataBusInfo
 		char pData[1];
 	};
 
-	struct XlcCmdTalkCmd
+	struct TalkCmd
 	{
 		char account[32];   	///< 账户名
 		char equID[32];			///< 设备ID
@@ -73,16 +72,17 @@ struct CXlDataBusInfo
 
 	};
 
-	struct XlcCmdTalkData
+	struct TalkData
 	{
 		char account[32];	 	///< 账户名
 		char equID[32];		///< 设备ID
 		unsigned int size;		///< 数据区长度
 	};
+}
 
-/***************************************************************************************/
-/************************for client response********************************************/
-	struct XlcRespMessage
+namespace XlClientResponse
+{
+	struct Message
 	{
 		char szID[32];					///< 车号
 		unsigned int unMsg;				///< 消息码
@@ -90,22 +90,22 @@ struct CXlDataBusInfo
 		char data[1];					///< 消息体
 	};
 
-	struct XlcRespLogin
+	struct Login
 	{
 		int code;				///< 0-登录成功, 1-登录失败, 2-用户名错误, 3-密码错误, 4-用户服务器用户满, 5-客户端版本过低或过高, 6-用户已在其他位置进行登录
 	};
 
-	struct XlcRespLogout
+	struct Logout
 	{
 		unsigned char  code;	///< 0-成功, 1-失败
 	};
 
-	struct XlcRespErrorCode
+	struct ErrorCode
 	{
 		unsigned char  code;	///< 0-成功, 1-失败
 	};
 
-	struct XlcRespAlarmInfo
+	struct AlarmInfo
 	{
 		char szID[32];					///< 车号
 		time_t tmTimeStamp;				///< 时间戳
@@ -115,25 +115,25 @@ struct CXlDataBusInfo
 		double dGPSSpeed;
 	};
 
-	struct XlcRespTransmitMessage
+	struct TransmitMessage
 	{
 		unsigned long ulMessageID;    	/// 消息ID
 		int state;  					/// 状态
 	};
 
-	struct XlcRespTransmitFile
+	struct TransmitFile
 	{
 		unsigned long ulFileID;    		/// 文件ID
 		int state;  					/// 状态
 	};
 
-	struct XlcRespEquipmentState
+	struct EquipmentState
 	{
 		char szID[32];					/// 设备ID
 		int  state;						/// 1在线；0离线
 	};
-	
-	struct XlcRespTalkCmd
+
+	struct TalkCmd
 	{
 		char account[32];   	///< 账户名
 		char equID[32];		///< 设备ID
@@ -141,21 +141,22 @@ struct CXlDataBusInfo
 
 	};
 
-	struct XlcRespTalkData
+	struct TalkData
 	{
 		char account[32];	 	///< 账户名
-		char equID[32];		///< 设备ID
+		char equID[32];			///< 设备ID
 		unsigned int size;		///< 数据区长度
 	};
+}
 
-/***************************************************************************************/
-/************************for device request*********************************************/
-	struct XldCmdConrrectTime
+namespace XlHostRequest
+{
+	struct ConrrectTime
 	{
 		time_t systime;				///< ??C?I?I3E??a
 	};
 
-	struct XldCmdConfigDev
+	struct ConfigDev
 	{
 		char szID[32];             	//EeOAID
 		char szVehicleID[32];       //3?oA
@@ -165,13 +166,13 @@ struct CXlDataBusInfo
 		int nNameSize;		  		//I??AAu3A3$?E???O!?#!?,o?a
 	};
 
-	struct XldCmdRealPlay
+	struct RealPlay
 	{
 		char szID[32];              //3?A?ID
 		long long llChnStatus; 		//I??A?aAo??`?  ?i?oO?3O64,oI??A
 	};
 
-	struct XldCmdStartVod
+	struct StartVod
 	{
 		GUID session;				//>O.Asession
 		char szID[32];				//3?A?ID 
@@ -180,27 +181,27 @@ struct CXlDataBusInfo
 		time_t tmEndTime;			//>O.A?aEoE??a!?Eo>O.A??IOOU??EeOAIa-1
 	};
 
-	struct XldCmdStopVod
+	struct StopVod
 	{
 		GUID session;				//>O.Asession
 		char szID[32];				//3?A?ID
 		long long llChnStatus; 		//I??A?aAo/1O?O??`?  ?i?oO?3O64,oI??A
 	};
 
-	struct XldCmdOnOffInfo
+	struct OnOffInfo
 	{
 		time_t tmStart;				//?aE?E??a, EoE!?AEuOD?AEOO?tmStartIa-1
 		time_t tmEnd;				//?aEoE??a, EoE!?AEuOD?AEOO?tmEndIa-1
 	};
 
-	struct XldCmdUpdateVodAck
+	struct UpdateVodAck
 	{
 		unsigned char  code;		///< 0-3E1|, 1-E??U
 	};
 
-	struct XldCmdContextInfo
+	struct ContextInfo
 	{
-		struct XldContextHeader
+		struct ContextHeader
 		{
 			long lUserID;                             ///< OA>?ID 
 			long lMessageID;                          ///< 消息ID 
@@ -212,14 +213,14 @@ struct CXlDataBusInfo
 		char *pContext;								  ///< IuIcAUEY
 		union
 		{
-			XldContextHeader header;
+			ContextHeader header;
 			char pData[1];
 		};
 	};
 
-	struct XldCmdFileInfo
+	struct FileInfo
 	{
-		struct XldFileInfoHeader
+		struct FileInfoHeader
 		{
 			long lUserID;                         ///< 用户ID 
 			int nFileID;                          ///< 文件ID 
@@ -231,12 +232,12 @@ struct CXlDataBusInfo
 		char *pFileName;
 		union
 		{
-			XldFileInfoHeader header;
+			FileInfoHeader header;
 			char pData[1];
 		};
 	};
 
-	struct XldCmdTalkCmd
+	struct TalkCmd
 	{
 		char account[32];   	///< 账户名
 		char equID[32];		///< 设备ID
@@ -244,15 +245,17 @@ struct CXlDataBusInfo
 
 	};
 
-	struct XldCmdTalkData
+	struct TalkData
 	{
 		char account[32];	 	///< 账户名
 		char equID[32];		///< 设备ID
 		unsigned int size;		///< 数据区长度
 	};
-/***************************************************************************************/
-/************************for device request*********************************************/
-	struct XldRespMessage
+}
+
+namespace XlHostResponse
+{
+	struct Message
 	{
 		char szID[32];					///< 车号
 		unsigned int unMsg;				///< 消息码
@@ -260,17 +263,17 @@ struct CXlDataBusInfo
 		char data[1];					///< 消息体
 	};
 
-	struct XldRespHostId
+	struct HostId
 	{
 		char hostId[32];				///< 主机ID
 	};
 
-	struct XldRespCorrectTime
+	struct CorrectTime
 	{
 		unsigned char  code;			///< 0-成功, 1-失败
 	};
 
-	struct XldRespHostInfo
+	struct HostInfo
 	{
 		char hostId[32];			///< 设备ID
 		char vehicleNum[8];			///< 列车号
@@ -281,7 +284,7 @@ struct CXlDataBusInfo
 		char data[1];				///< 通道名称
 	};
 
-	typedef struct XldRespAlarmInfo
+	struct AlarmInfo
 	{
 		time_t tmTimeStamp;				///< 时间戳
 		char bAlarm;					///< 报警类型
@@ -290,19 +293,19 @@ struct CXlDataBusInfo
 		double dGPSSpeed;
 	};
 
-	struct XldRespRealData
+	struct RealData
 	{
 		char hostId[32];				///< 设备ID
 		unsigned char channel;			///< 通道号
 		char data[1];
 	};
 
-	struct XldRespStopReal
+	struct StopReal
 	{
 		unsigned char  code;			///< 0-成功, 1-失败
 	};
 
-	struct XldRespVodData
+	struct VodData
 	{
 		GUID sessionId;					///< 回话ID	
 		char hostId[32];				///< 设备ID
@@ -310,33 +313,33 @@ struct CXlDataBusInfo
 		char data[1];
 	};
 
-	struct XldRespStopVod
+	struct StopVod
 	{
 		unsigned char  code;			///< 0-成功, 1-失败
 	};
 
-	struct XldRespConrrectTime
+	struct ConrrectTime
 	{
 		unsigned char  code;			///< 0-成功, 1-失败
 	};
 
-	struct XldRespOnOffInfo
+	struct OnOffInfo
 	{
 		time_t tmStart;					/// 开始时间
 		time_t tmEnd;					/// 结束时间
 	};
 
-	struct XldRespVodInfo
+	struct VodInfo
 	{
 		time_t tmStart;					/// 开始时间
 		time_t tmEnd;					/// 结束时间
 	};
-	struct XldRespSyncVodInfo
+	struct SyncVodInfo
 	{
 		time_t tmFristItem;				/// 第一条数据时间
 	};
 
-	typedef struct XldRespTalkCmd
+	struct TalkCmd
 	{
 		char account[32];   	///< 账户名
 		char equID[32];			///< 设备ID
@@ -344,69 +347,79 @@ struct CXlDataBusInfo
 
 	};
 
-	typedef struct XldRespTalkData
+	struct TalkData
 	{
 		char account[32];	 	///< 账户名
 		char equID[32];			///< 设备ID
 		unsigned int size;		///< 数据区长度
 	};
+}
+
+struct CXlDataBusInfo
+{
 
 	CXlProtocol::CmdHeader header;
 	union
 	{
-		/// for client request
-		XlcCmdLogin xlcCmdLogin;
-		XlcCmdRealAlarm xlcCmdRealAlarm;
-		XlcCmdRealPlay xlcCmdRealPlay;
-		XlcCmdStartVod xlcCmdStartVod;
-		XlcCmdStopVod xlcCmdStopVod;
-		XlcCmdContextInfo xlcCmdContextInfo;
-		XlcCmdFileInfo xlcCmdFileInfo;
-		XlcCmdTalkCmd xlcCmdTalkCmd;
-		XlcCmdTalkData xlcCmdTalkData;
-		/// for client response
-		XlcRespMessage xlcRespMessage;
-		XlcRespLogin xlcRespLogin;
-		XlcRespLogout xlcRespLogout;
-		XlcRespErrorCode xlcRespErrorCode;
-		XlcRespAlarmInfo xlcRespAlarmInfo;
-		XlcRespTransmitMessage xlcRespTransmitMessage;
-		XlcRespTransmitFile xlcRespTransmitFile;
-		XlcRespEquipmentState xlcRespEquipmentState;
-		XlcRespTalkCmd xlcRespTalkCmd;
-		XlcRespTalkData xlcRespTalkData;
-		/// for device request
-		XldCmdConrrectTime xldCmdConrrectTime;
-		XldCmdConfigDev xldCmdConfigDev;
-		XldCmdRealPlay xldCmdRealPlay;
-		XldCmdStartVod xldCmdStartVod;
-		XldCmdStopVod xldCmdStopVod;
-		XldCmdOnOffInfo xldCmdOnOffInfo;
-		XldCmdUpdateVodAck xldCmdUpdateVodAck;
-		XldCmdTalkCmd xldCmdTalkCmd;
-		XldCmdTalkData xldCmdTalkData;
-		/// for device response
-		XldRespMessage xldRespMessage;
-		XldRespHostId xldRespHostId;
-		XldRespCorrectTime xldRespConrrectTime;
-		XldRespHostInfo xldRespHostInfo;
-		XldRespAlarmInfo xldRespAlarmInfo;
-		XldRespRealData xldRespRealData;
-		XldRespStopReal xldRespStopReal;
-		XldRespVodData xldRespVodData;
-		XldRespStopVod xldRespStopVod;
-		XldRespOnOffInfo xldRespOnOffInfo;
-		XldRespVodInfo xldRespVodInfo;
-		XldRespSyncVodInfo xldRespSyncVodInfo;
-		XldRespTalkCmd xldRespTalkCmd;
-		XldRespTalkData xldRespTalkData;
-		/// for data
+		struct {
+			XlClientRequest::Login login;
+			XlClientRequest::RealAlarm realAlarm;
+			XlClientRequest::RealPlay realPlay;
+			XlClientRequest::StartVod startVod;
+			XlClientRequest::StopVod stopVod;
+			XlClientRequest::ContextInfo contextInfo;
+			XlClientRequest::FileInfo fileInfo;
+			XlClientRequest::TalkCmd talkCmd;
+			XlClientRequest::TalkData talkData;
+		} clientRequest;
+
+		struct {
+			XlClientResponse::Message message;
+			XlClientResponse::Login login;
+			XlClientResponse::Logout logout;
+			XlClientResponse::ErrorCode errorCode;
+			XlClientResponse::AlarmInfo alarmInfo;
+			XlClientResponse::TransmitMessage transmitMessage;
+			XlClientResponse::TransmitFile transmitFile;
+			XlClientResponse::EquipmentState equipmentState;
+			XlClientResponse::TalkCmd talkCmd;
+			XlClientResponse::TalkData talkData;
+		} clientResponse;
+
+		struct {
+			XlHostRequest::ConrrectTime conrrectTime;
+			XlHostRequest::ConfigDev configDev;
+			XlHostRequest::RealPlay realPlay;
+			XlHostRequest::StartVod startVod;
+			XlHostRequest::StopVod stopVod;
+			XlHostRequest::OnOffInfo onOffInfo;
+			XlHostRequest::UpdateVodAck updateVodAck;
+			XlHostRequest::TalkCmd talkCmd;
+			XlHostRequest::TalkData talkData;
+		} hostRequest;
+
+		struct {
+			XlHostResponse::Message message;
+			XlHostResponse::HostId hostId;
+			XlHostResponse::ConrrectTime conrrectTime;
+			XlHostResponse::HostInfo hostInfo;
+			XlHostResponse::AlarmInfo alarmInfo;
+			XlHostResponse::RealData realData;
+			XlHostResponse::StopReal stopReal;
+			XlHostResponse::VodData vodData;
+			XlHostResponse::StopVod stopVod;
+			XlHostResponse::OnOffInfo onOffInfo;
+			XlHostResponse::VodInfo vodInfo;
+			XlHostResponse::SyncVodInfo syncVodInfo;
+			XlHostResponse::TalkCmd talkCmd;
+			XlHostResponse::TalkData talkData;
+		} hostResponse;
 		char pData[1];
 	};
 };
 #pragma pack(pop)
 
-typedef std::vector<CXlDataBusInfo::XldCmdContextInfo *> HostContextVec;
-typedef std::vector<CXlDataBusInfo::XldCmdFileInfo *> HostFileInfoVec;
+typedef std::vector<XlHostRequest::ContextInfo *> HostContextVec;
+typedef std::vector<XlHostRequest::FileInfo *> HostFileInfoVec;
 
 #endif //!__XL_DATA_BUS_DEF__

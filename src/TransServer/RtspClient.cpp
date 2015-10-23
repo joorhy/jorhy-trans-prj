@@ -280,9 +280,9 @@ j_result_t CRTSPClient::Play()
 		CXlDataBusInfo cmdData = { 0 };
 		cmdData.header.cmd = CXlProtocol::xlc_real_play;
 		cmdData.header.flag = CXlProtocol::xl_ctrl_start;
-		strcpy(cmdData.xlcCmdRealPlay.hostId, m_helper.GetHostID().c_str());
-		cmdData.xlcCmdRealPlay.channel = m_helper.GetChannel();
-		cmdData.xlcCmdRealPlay.pBuffer = &m_ringBuffer;
+		strcpy(cmdData.clientRequest.realPlay.hostId, m_helper.GetHostID().c_str());
+		cmdData.clientRequest.realPlay.channel = m_helper.GetChannel();
+		cmdData.clientRequest.realPlay.pBuffer = &m_ringBuffer;
 		nResult = pHost->OnRequest(cmdData);
 	}
 
@@ -298,9 +298,9 @@ j_result_t CRTSPClient::Stop()
 		CXlDataBusInfo cmdData = { 0 };
 		cmdData.header.cmd = CXlProtocol::xlc_real_play;
 		cmdData.header.flag = CXlProtocol::xl_ctrl_stop;
-		strcpy(cmdData.xlcCmdRealPlay.hostId, m_helper.GetHostID().c_str());
-		cmdData.xlcCmdRealPlay.channel = m_helper.GetChannel();
-		cmdData.xlcCmdRealPlay.pBuffer = &m_ringBuffer;
+		strcpy(cmdData.clientRequest.realPlay.hostId, m_helper.GetHostID().c_str());
+		cmdData.clientRequest.realPlay.channel = m_helper.GetChannel();
+		cmdData.clientRequest.realPlay.pBuffer = &m_ringBuffer;
 		nResult = pHost->OnRequest(cmdData);
 	}
 

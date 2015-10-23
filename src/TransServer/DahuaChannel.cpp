@@ -17,7 +17,7 @@ CDahuaChannel::~CDahuaChannel()
 
 j_result_t CDahuaChannel::OpenStream(const CXlDataBusInfo &cmdData)
 {
-	AddRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
+	AddRingBuffer(cmdData.clientRequest.realPlay.pBuffer);
 	CDahuaHost *pHost = dynamic_cast<CDahuaHost *>(m_pHost);
 	if (pHost != NULL)
 	{
@@ -34,7 +34,7 @@ j_result_t CDahuaChannel::CloseStream(const CXlDataBusInfo &cmdData)
 		CLIENT_StopRealPlay(m_llStreamHandle);
 		m_llStreamHandle = 0;
 	}
-	DelRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
+	DelRingBuffer(cmdData.clientRequest.realPlay.pBuffer);
 
 	return J_OK;
 }

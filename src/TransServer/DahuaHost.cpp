@@ -72,11 +72,11 @@ j_result_t CDahuaHost::StartRealPlay(const CXlDataBusInfo &cmdData)
 {
 	j_result_t nResult = J_UNKNOW;
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.xlcCmdRealPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.clientRequest.realPlay.channel);
 	if (it == m_channelMap.end())
 	{
 		J_Obj *pObj = NULL;
-		CreateChannel(cmdData.xlcCmdRealPlay.channel, pObj);
+		CreateChannel(cmdData.clientRequest.realPlay.channel, pObj);
 		if (pObj != NULL)
 		{
 			J_Channel *pChannel = dynamic_cast<J_Channel *>(pObj);
@@ -98,14 +98,14 @@ j_result_t CDahuaHost::StartRealPlay(const CXlDataBusInfo &cmdData)
 j_result_t CDahuaHost::StopRealPlay(const CXlDataBusInfo &cmdData)
 {
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.xlcCmdRealPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.clientRequest.realPlay.channel);
 	if (it != m_channelMap.end())
 	{
 		--(it->second.nRef);
 		if (it->second.nRef == 0)
 		{
 			J_Obj *pObj = NULL;
-			CreateChannel(cmdData.xlcCmdRealPlay.channel, pObj);
+			CreateChannel(cmdData.clientRequest.realPlay.channel, pObj);
 			if (pObj != NULL)
 			{
 				J_Channel *pChannel = dynamic_cast<J_Channel *>(pObj);
@@ -114,7 +114,7 @@ j_result_t CDahuaHost::StopRealPlay(const CXlDataBusInfo &cmdData)
 					pChannel->CloseStream(cmdData);
 				}
 			}
-			ReleaseChannel(cmdData.xlcCmdRealPlay.channel);
+			ReleaseChannel(cmdData.clientRequest.realPlay.channel);
 		}
 		else
 		{

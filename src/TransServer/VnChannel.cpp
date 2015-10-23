@@ -39,7 +39,7 @@ CVnChannel::~CVnChannel()
 
 j_result_t CVnChannel::OpenStream(const CXlDataBusInfo &cmdData)
 {
-	AddRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
+	AddRingBuffer(cmdData.clientRequest.realPlay.pBuffer);
 
 	if (m_lStreamHandle == NULL)
 	{
@@ -76,7 +76,7 @@ j_result_t CVnChannel::CloseStream(const CXlDataBusInfo &cmdData)
 		NETMEDIA_CloseRealPlay(m_lStreamHandle);
 		m_lStreamHandle = NULL;
 	}
-	DelRingBuffer(cmdData.xlcCmdRealPlay.pBuffer);
+	DelRingBuffer(cmdData.clientRequest.realPlay.pBuffer);
 
 	return J_OK;
 }
