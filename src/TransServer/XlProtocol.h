@@ -84,13 +84,10 @@ struct CXlProtocol
 		xld_set_dvr_info = 0x05,			///< 配置设备信息
 		xld_server_ready = 0x06,			///< 配置设备信息
 		//实时视频
-		xld_start_real_play = 0x10,			///< 开始实时视频播放
-		xld_stop_real_play = 0x10,			///< 停止实时视频播放
-		xld_start_real_view = 0x12,			///< 开始实时视频预览
-		xld_stop_real_view = 0x12,			///< 停止实时视频预览
+		xld_real_play = 0x10,				///< 实时视频播放
+		xld_real_view = 0x12,				///< 开始实时视频预览
 		//远程回放&视频下载
-		xld_start_vod_play = 0x14,			///< 开始录像回放
-		xld_stop_vod_play = 0x14,			///< 停止录像回放
+		xld_vod_play = 0x14,				///< 录像回放
 		xld_start_vod_download = 0x15,		///< 开始录像下载
 		xld_stop_vod_download = 0x16,		///< 停止录像下载
 		//运行数据记录

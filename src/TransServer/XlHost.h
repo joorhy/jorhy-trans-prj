@@ -49,6 +49,8 @@ private:
 	j_result_t OnRealData(const CXlDataBusInfo *respData);
 	/// 历史视频数据
 	j_result_t OnVodData(const CXlDataBusInfo *respData);
+	/// 停止历史视频数据
+	j_result_t OnVodStop(const CXlDataBusInfo *respData);
 	/// 设置时钟的反馈信息
 	j_result_t OnConrrectTime(const CXlDataBusInfo &respData);
 	/// 获取设备信息的反馈信息

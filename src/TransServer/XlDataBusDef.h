@@ -361,7 +361,7 @@ struct CXlDataBusInfo
 	CXlProtocol::CmdHeader header;
 	union
 	{
-		struct {
+		union {
 			XlClientRequest::Login login;
 			XlClientRequest::RealAlarm realAlarm;
 			XlClientRequest::RealPlay realPlay;
@@ -373,7 +373,7 @@ struct CXlDataBusInfo
 			XlClientRequest::TalkData talkData;
 		} clientRequest;
 
-		struct {
+		union {
 			XlClientResponse::Message message;
 			XlClientResponse::Login login;
 			XlClientResponse::Logout logout;
@@ -386,7 +386,7 @@ struct CXlDataBusInfo
 			XlClientResponse::TalkData talkData;
 		} clientResponse;
 
-		struct {
+		union {
 			XlHostRequest::ConrrectTime conrrectTime;
 			XlHostRequest::ConfigDev configDev;
 			XlHostRequest::RealPlay realPlay;
@@ -398,7 +398,7 @@ struct CXlDataBusInfo
 			XlHostRequest::TalkData talkData;
 		} hostRequest;
 
-		struct {
+		union {
 			XlHostResponse::Message message;
 			XlHostResponse::HostId hostId;
 			XlHostResponse::ConrrectTime conrrectTime;

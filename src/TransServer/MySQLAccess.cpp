@@ -46,8 +46,6 @@ j_result_t CMySQLAccess::Connect(const j_char_t *pAddr, j_int16_t nPort, const j
 		return J_DB_ERROR;
 	}
 	mysql_set_character_set(m_mysql, "gbk");
-	//mysql_real_query(m_mysql,"SET NAMES 'UTF8'", strlen("SET NAMES 'UTF8'"));
-	//mysql_query(m_mysql,"SET NAMES UTF8");
 	J_OS::LOGINFO("character name: %s", mysql_character_set_name(m_mysql));
 
 	m_bConnected = true;
@@ -265,66 +263,69 @@ j_result_t CMySQLAccess::UpdateDevInfo(const XlHostResponse::HostInfo &hostInfo,
 		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
 
 		MYSQL_RES *results = mysql_store_result(m_mysql);
-		if (results->row_count == 0)
+		if (results != NULL)
 		{
-			memset(strCmd, 0, sizeof(strCmd));
-			sprintf(strCmd, "INSERT INTO Equipment (EquipmentID,VehicleNO,PhoneNum,TotalChannels,Online,State) VALUES ('%s','%s','%s',%d,%d,%d);",
-				hostInfo.hostId, hostInfo.vehicleNum, hostInfo.phoneNum, hostInfo.totalChannels, bOnline, 1);
-			ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-		}
-
-		memset(strCmd, 0, sizeof(strCmd));
-		if (bOnline == true)
-		{
-			sprintf(strCmd, "UPDATE Equipment SET VehicleNO='%s',PhoneNum='%s',TotalChannels=%d,Online=%d WHERE EquipmentID='%s';",
-				hostInfo.vehicleNum, hostInfo.phoneNum, hostInfo.totalChannels & 0xFF, bOnline, hostInfo.hostId);
-		}
-		else
-		{
-			sprintf(strCmd, "UPDATE Equipment SET Online=%d WHERE EquipmentID='%s';",
-				bOnline, hostInfo.hostId);
-		}
-		ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-
-		char *mediaType = (char *)hostInfo.data;
-
-		char *pChannelData = mediaType + hostInfo.mediaTypeNum;
-		char *pChannelEnd = NULL;
-		for (int i = 0; i < hostInfo.totalChannels; i++)
-		{
-			memset(strCmd, 0, sizeof(strCmd));
-			sprintf(strCmd, "SELECT * FROM EquipmentDetail WHERE EquipmentID='%s' AND channel=%d;", hostInfo.hostId, i + 1);
-			ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-
-			char channelName[64] = { 0 };
-			j_string_t strChannelName;
-			int nameLen = 0;
-			pChannelEnd = strstr(pChannelData, "#");
-			if (pChannelEnd != NULL)
-			{
-				nameLen = pChannelEnd - pChannelData;
-				memcpy(channelName, pChannelData, nameLen);
-			}
-			else
-			{
-				strcpy(channelName, pChannelData);
-			}
-			pChannelData += (nameLen + 1);
-
-			memset(strCmd, 0, sizeof(strCmd));
-
-			results = mysql_store_result(m_mysql);
 			if (results->row_count == 0)
 			{
-				sprintf(strCmd, "INSERT INTO EquipmentDetail (EquipmentID,channel,channelType,channelName) VALUES ('%s',%d,%d,'%s');",
-					hostInfo.hostId, i + 1, mediaType[i] & 0xFF, channelName);
+				memset(strCmd, 0, sizeof(strCmd));
+				sprintf(strCmd, "INSERT INTO Equipment (EquipmentID,VehicleNO,PhoneNum,TotalChannels,Online,State) VALUES ('%s','%s','%s',%d,%d,%d);",
+					hostInfo.hostId, hostInfo.vehicleNum, hostInfo.phoneNum, hostInfo.totalChannels, bOnline, 1);
+				ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+			}
+
+			memset(strCmd, 0, sizeof(strCmd));
+			if (bOnline == true)
+			{
+				sprintf(strCmd, "UPDATE Equipment SET VehicleNO='%s',PhoneNum='%s',TotalChannels=%d,Online=%d WHERE EquipmentID='%s';",
+					hostInfo.vehicleNum, hostInfo.phoneNum, hostInfo.totalChannels & 0xFF, bOnline, hostInfo.hostId);
 			}
 			else
 			{
-				sprintf(strCmd, "UPDATE EquipmentDetail SET channelType=%d,channelName='%s' WHERE EquipmentID='%s' AND channel = %d;",
-					mediaType[i] & 0xFF, channelName, hostInfo.hostId, i + 1);
+				sprintf(strCmd, "UPDATE Equipment SET Online=%d WHERE EquipmentID='%s';",
+					bOnline, hostInfo.hostId);
 			}
 			ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+
+			char *mediaType = (char *)hostInfo.data;
+
+			char *pChannelData = mediaType + hostInfo.mediaTypeNum;
+			char *pChannelEnd = NULL;
+			for (int i = 0; i < hostInfo.totalChannels; i++)
+			{
+				memset(strCmd, 0, sizeof(strCmd));
+				sprintf(strCmd, "SELECT * FROM EquipmentDetail WHERE EquipmentID='%s' AND channel=%d;", hostInfo.hostId, i + 1);
+				ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+
+				char channelName[64] = { 0 };
+				j_string_t strChannelName;
+				int nameLen = 0;
+				pChannelEnd = strstr(pChannelData, "#");
+				if (pChannelEnd != NULL)
+				{
+					nameLen = pChannelEnd - pChannelData;
+					memcpy(channelName, pChannelData, nameLen);
+				}
+				else
+				{
+					strcpy(channelName, pChannelData);
+				}
+				pChannelData += (nameLen + 1);
+
+				memset(strCmd, 0, sizeof(strCmd));
+
+				results = mysql_store_result(m_mysql);
+				if (results->row_count == 0)
+				{
+					sprintf(strCmd, "INSERT INTO EquipmentDetail (EquipmentID,channel,channelType,channelName) VALUES ('%s',%d,%d,'%s');",
+						hostInfo.hostId, i + 1, mediaType[i] & 0xFF, channelName);
+				}
+				else
+				{
+					sprintf(strCmd, "UPDATE EquipmentDetail SET channelType=%d,channelName='%s' WHERE EquipmentID='%s' AND channel = %d;",
+						mediaType[i] & 0xFF, channelName, hostInfo.hostId, i + 1);
+				}
+				ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+			}
 		}
 	}
 	catch (...)
@@ -493,7 +494,7 @@ j_result_t CMySQLAccess::DeleteLogInfo(const char *pHostId)
  * 修改日期：2015/09/16/ 16:02:00
  ***********************************************************************************************************/
 j_result_t CMySQLAccess::InsertLogInfo(const char *pHostId, time_t tmStart, time_t tmEnd)
-{	
+{
 	if (!CXlHelper::ActionTimestampCheck(tmStart, 8) || !CXlHelper::ActionTimestampCheck(tmEnd, 8))						//确保插入到指定数据库的时间戳格式是正确的
 		return J_DB_ERROR;
 
@@ -578,8 +579,57 @@ j_result_t CMySQLAccess::InsertLogInfo(const char *pHostId, time_t tmStart, time
 
 
 /***********************************************************************************************************
+ * 程序创建：赵进军                     程序修改:赵进军
+ * 函数功能：根据提供的查询语句检查某条数据是否存在
+ * 参数说明：
+ *    query：查询语句
+ * 注意事项：null
+ * 修改日期：2015/10/19 14:20:00
+ ***********************************************************************************************************/
+j_boolean_t CMySQLAccess::DataIsExist(const char *query)
+{
+	mysql_set_character_set(m_mysql, "unicode");
+	int retCount = 0;
+	try
+	{
+		int ret = mysql_real_query(m_mysql, query, strlen(query));
+		if (ret == 0)
+		{
+			MYSQL_ROW sql_row_message_id;
+			MYSQL_RES *result_TotalCount = mysql_store_result(m_mysql);													//保存查询到的数据到
+			if (result_TotalCount->row_count != 0)
+			{
+				for (; sql_row_message_id = mysql_fetch_row(result_TotalCount);)
+				{
+					if (sql_row_message_id[0] != NULL)
+					{
+						retCount = atol(sql_row_message_id[0]);
+						break;
+					}
+				}
+			}
+			mysql_free_result(result_TotalCount);
+		}
+		else
+		{
+			retCount = 0;
+		}
+	}
+	catch (...)
+	{
+		retCount = 0;
+	}
+
+	if (retCount > 0)
+		return true;
+	else
+		return false;
+}
+
+
+/***********************************************************************************************************
  * 程序创建：刘进朝                     程序修改:赵进军
- * 函数功能：新增or删除DVR 更新recordingfirsttime里面的数据
+ * 函数功能：新增or删除DVR 更新recordingfirsttime里面的数据,用于记录设备的视频信息的开始点
  * 参数说明：
  *  pHostId：车辆ID
  *  tmFirstItem：时间
@@ -597,20 +647,28 @@ j_result_t CMySQLAccess::SyncLogInfo(const char *pHostId, time_t tmFirstItem)
 	if (!m_bConnected)
 		return J_DB_ERROR;
 
+	char strCmd[128] = { 0 };
+	sprintf(strCmd, "SELECT COUNT(*) FROM recordingfirsttime WHERE EquipmentID='%s';", pHostId);
+	j_boolean_t isAdd = false;
+	isAdd = DataIsExist(strCmd);
+
 	try
 	{
-		return J_OK;
-		char strCmd[128] = { 0 };
-		sprintf(strCmd, "UPDATE recordingfirsttime set FristTime= '%I64u' WHERE EquipmentID = '%s'", tmFirstItem, pHostId);
+		memset(strCmd, 0, sizeof(strCmd));
+		if (isAdd)																									// 当前数据在数据库中不存在
+			sprintf(strCmd, "UPDATE recordingfirsttime set FristTime= '%I64u' WHERE EquipmentID = '%s'", tmFirstItem, pHostId);
+		else
+			sprintf(strCmd, "INSERT Into recordingfirsttime(EquipmentID,FristTime) VALUES('%s','%I64u')", pHostId, tmFirstItem);
 		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
 		if (ret == 0)
 			return J_OK;
 		else
 			return J_DB_ERROR;
+
 	}
 	catch (...)
 	{
-		//J_OS::LOGDEBUG("CSqlServerAccess::UpdateDevInfo Exception");
+		J_OS::LOGDEBUG("CSqlServerAccess::Recordingfirsttime Exception");
 		return J_DB_ERROR;
 	}
 	return J_OK;
@@ -639,16 +697,7 @@ j_result_t CMySQLAccess::AddContextInfo(long lUserID, const char *pTitle, const 
 		char timeInterval[arr_size] = { 0 };
 		CXlHelper::GetTimestamp(true, timeInterval);																// 获取系统时间戳
 
-		/*int locSize = sizeof(pTitle);
-		j_string_t klkl = mysql_character_set_name(m_mysql);
-
-		j_string_t s(pTitle);
-
-		j_string_t loc_strs;
-		loc_strs = CXlHelper::ASCII2UTF_8(s);*/
-		//CXlHelper::Ansi2UTF8("看", loc_strs);
-
-
+		J_OS::LOGINFO("CMySQLAccess::AddContextInfo character name: %s", mysql_character_set_name(m_mysql));
 		sprintf(strCmd, "INSERT INTO TransMessage(UserID,Title,Content,SendTime)VALUES(%d,'%s','%s','%s');",
 			lUserID, pTitle, pContext, timeInterval);
 		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
@@ -966,7 +1015,7 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 
 	try
 	{
-		mysql_set_character_set(m_mysql, "unicode");
+		//mysql_set_character_set(m_mysql, "unicode");
 		char strCmd[128] = { 0 };
 		sprintf(strCmd, "SELECT MessageID FROM TransMessageDetail WHERE EquipmentID='%s';", pHostId);
 		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
@@ -1010,17 +1059,23 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 								}
 								if (strcmp("Title", fd_message->name) == 0)
 								{
-									nTitleLen = strlen(sql_row_message[j]);
+									j_wstring_t wstrTitle;
+									CXlHelper::Ansi2Unicode(sql_row_message[j], wstrTitle);
+									//memcpy(pTitle, sql_row_message[j], nTitleLen);
+									nTitleLen = wstrTitle.length() * 2;
 									pTitle = new char[nTitleLen + 1];
 									memset(pTitle, 0, nTitleLen + 1);
-									memcpy(pTitle, sql_row_message[j], nTitleLen);
+									memcpy(pTitle, wstrTitle.c_str(), nTitleLen);									
 								}
 								if (strcmp("Content", fd_message->name) == 0)
-								{
-									nContentLen = strlen(sql_row_message[j]);
+								{							
+									j_wstring_t wstrContent;
+									CXlHelper::Ansi2Unicode(sql_row_message[j], wstrContent);
+									//memcpy(pContent, sql_row_message[j], nContentLen);
+									nContentLen = wstrContent.length() * 2;
 									pContent = new char[nContentLen + 1];
 									memset(pContent, 0, nContentLen + 1);
-									memcpy(pContent, sql_row_message[j], nContentLen);
+									memcpy(pContent, wstrContent.c_str(), nContentLen);
 								}
 							}
 
@@ -1038,7 +1093,7 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 				}
 			}
 		}
-
+		//mysql_set_character_set(m_mysql, "gbk");
 	}
 	catch (...)
 	{
@@ -1100,10 +1155,13 @@ j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &f
 								}
 								if (strcmp("Name", fd_file->name) == 0)
 								{
-									nTitleLen = strlen(sql_row_file[j]);
+									j_wstring_t wstrTitle;
+									CXlHelper::Ansi2Unicode(sql_row_file[j], wstrTitle);
+									//memcpy(pTitle, sql_row_message[j], nTitleLen);
+									nTitleLen = wstrTitle.length() * 2;
 									pTitle = new char[nTitleLen + 1];
 									memset(pTitle, 0, nTitleLen + 1);
-									memcpy(pTitle, sql_row_file[j], nTitleLen);
+									memcpy(pTitle, wstrTitle.c_str(), nTitleLen);
 								}
 								if (strcmp("FilePath", fd_file->name) == 0)
 								{
@@ -1129,7 +1187,6 @@ j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &f
 				}
 			}
 		}
-
 	}
 	catch (...)
 	{

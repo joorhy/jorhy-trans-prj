@@ -152,7 +152,7 @@ j_result_t CXlClient::OnHandleWrite(J_AsioDataBase *pAsioData)
 				m_nFileTotleSize += pRespData->header.length;
 			}
 		}
-		J_OS::LOGINFO("CXlClient::OnHandleWrite send len = %d flag = %d", m_streamHeader.dataLen, pRespData->header.flag);
+		//J_OS::LOGINFO("CXlClient::OnHandleWrite send len = %d flag = %d", m_streamHeader.dataLen, pRespData->header.flag);
 		//if (pRespData->respHeader.length + sizeof(CXlProtocol::CmdHeader) + sizeof(CXlProtocol::CmdTail) != m_streamHeader.dataLen)
 		//{
 		//	assert(false);
@@ -463,20 +463,18 @@ j_result_t CXlClient::SaveFiles(const CXlDataBusInfo &cmdData)
 		CXlHelper::Unicode2Ansi(wChTitle, m_strTitle);
 		delete[]wChTitle;
 
-		//CXlHelper::Unicode2Ansi(wChTitle, m_strTitle);
-		//m_strTitle = cmdData.cmdFileInfo.pData + (cmdData.cmdFileInfo.nDevCount * 32);
-
 		if (m_pFile == NULL)
 		{
 			char pFilePath[256] = { 0 };
 			GetPrivateProfileString("file_info", "path", "E:/FileRecord", pFilePath, sizeof(pFilePath), g_ini_file);
 			CreateDirectory(pFilePath, NULL);																		// 创建文件夹
-			m_strTitle = CXlHelper::RenameFile(m_strTitle);															// 重命名联络文件的名称 防止因联络文件名重复被覆盖
-			sprintf(pFilePath, "%s/%s", pFilePath, m_strTitle.c_str());
-			m_strContext = m_strTitle.c_str();
+			m_strContext = CXlHelper::RenameFile(m_strTitle);															// 重命名联络文件的名称 防止因联络文件名重复被覆盖
+			sprintf(pFilePath, "%s/%s", pFilePath, m_strContext.c_str());
 			m_pFile = fopen(pFilePath, "wb+");																		// 打开文件
-			if (NULL != m_pFile)
-				m_FilePath = pFilePath;
+			if (m_pFile == NULL)
+			{
+				// 预留错误处理
+			}
 		}
 	}
 	else if (cmdData.header.flag == CXlProtocol::xl_ctrl_stream)
@@ -492,9 +490,7 @@ j_result_t CXlClient::SaveFiles(const CXlDataBusInfo &cmdData)
 			m_pFile = NULL;
 		}
 
-		JoDataBaseObj->AddFileInfo(m_lUserID, m_strTitle.c_str(), m_FilePath.c_str(), m_transTargetMap);
-		//JoDataBaseObj->AddFileInfo(m_lUserID, m_strTitle.c_str(), m_strContext.c_str(), m_transTargetMap);
-
+		JoDataBaseObj->AddFileInfo(m_lUserID, m_strTitle.c_str(), m_strContext.c_str(), m_transTargetMap);
 		std::vector<j_string_t>::iterator it = m_transTargetMap.begin();
 		for (; it != m_transTargetMap.end(); it++)
 		{

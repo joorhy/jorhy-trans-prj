@@ -8,64 +8,64 @@ struct CXlHostCmdData
 {
 	struct CmdConrrectTime
 	{
-		time_t systime;				///< 当前系统时间
+		time_t systime;				///< ??C?I?I3E??a
 	};
 
 	struct CmdConfigDev
 	{
-		char szID[32];             	//设置ID
-		char szVehicleID[32];       //车号
-		ULONG ulPhoneNum;           //电话号码
-		int nTotalChannels;         //通道个数
-		int nTypeSize;				//摄像头类型
-		int nNameSize;		  		//通道名称长度，以“#”隔开
+		char szID[32];             	//EeOAID
+		char szVehicleID[32];       //3?oA
+		ULONG ulPhoneNum;           //?c>?oAAe
+		int nTotalChannels;         //I??A,oEu
+		int nTypeSize;				//EaInI.AaDI
+		int nNameSize;		  		//I??AAu3A3$?E???O!?#!?,o?a
 	};
 
 	struct CmdRealPlay
 	{
-		char szID[32];              //车辆ID
-		long long llChnStatus; 		//通道开启状态  最大支持64个通道
+		char szID[32];              //3?A?ID
+		long long llChnStatus; 		//I??A?aAo??`?  ?i?oO?3O64,oI??A
 	};
 
 	struct CmdStartVod
 	{
-		GUID session;				//回放session
-		char szID[32];				//车辆ID 
-		long long llChnStatus; 		//通道开启状态  最大支持64个通道
-		time_t tmStartTime;			//回放开始时间
-		time_t tmEndTime;			//回放结束时间。若回放到现在，设置为-1
+		GUID session;				//>O.Asession
+		char szID[32];				//3?A?ID 
+		long long llChnStatus; 		//I??A?aAo??`?  ?i?oO?3O64,oI??A
+		time_t tmStartTime;			//>O.A?aE?E??a
+		time_t tmEndTime;			//>O.A?aEoE??a!?Eo>O.A??IOOU??EeOAIa-1
 	};
 
 	struct CmdStopVod
 	{
-		GUID session;				//回放session
-		char szID[32];				//车辆ID
-		long long llChnStatus; 		//通道开启/关闭状态  最大支持64个通道
+		GUID session;				//>O.Asession
+		char szID[32];				//3?A?ID
+		long long llChnStatus; 		//I??A?aAo/1O?O??`?  ?i?oO?3O64,oI??A
 	};
 
 	struct CmdOnOffInfo
 	{
-		time_t tmStart;				//开始时间, 若取得所有的日志tmStart为-1
-		time_t tmEnd;				//结束时间, 若取得所有的日志tmEnd为-1
+		time_t tmStart;				//?aE?E??a, EoE!?AEuOD?AEOO?tmStartIa-1
+		time_t tmEnd;				//?aEoE??a, EoE!?AEuOD?AEOO?tmEndIa-1
 	};
 
 	struct CmdUpdateVodAck
 	{
-		unsigned char  code;		///< 0-成功, 1-失败
+		unsigned char  code;		///< 0-3E1|, 1-E??U
 	};
 
 	struct CmdContextInfo
 	{
 		struct ContextHeader
 		{
-			long lUserID;                             ///< 用户ID 
-			int nMessageTitleSize;  				  ///< 消息标题长度
-			unsigned long ulMessageSize;			  ///< 消息内容长度
-			int nDevCount;							  ///< 设备个数
+			long lUserID;                             ///< OA>?ID 
+			long lMessageID;                          ///< 消息ID 
+			int nMessageTitleSize;  				  ///< IuIc?eIa3$?E
+			unsigned long ulMessageSize;			  ///< IuIcAUEY3$?E
 			char data[1];
 		};
 
-		char *pContext;								  ///< 消息内容
+		char *pContext;								  ///< IuIcAUEY
 		union
 		{
 			ContextHeader header;
@@ -78,32 +78,18 @@ struct CXlHostCmdData
 		struct FileInfoHeader
 		{
 			long lUserID;                         ///< 用户ID 
-			int nFileNameSize;  				  ///< 文件名称长度
-			unsigned long ulFileSize;			  ///< 文件长度
-			int nDevCount;						  ///< 设备个数
+			int nFileID;                          ///< 文件ID 
+			int nFileNameSize;  			      ///< 文件名称长度
+			unsigned long ulFileSize;			  ///< 文件总长
 			char pData[1];
 		};
 
+		char *pFileName;
 		union
 		{
 			FileInfoHeader header;
 			char pData[1];
 		};
-	};
-
-	typedef struct CmdTalkCmd
-	{
-		char account[32];   	///< 账户名
-		char equID[32];		///< 设备ID
-		int state;
-
-	};
-
-	typedef struct CmdTalkData
-	{
-		char account[32];	 	///< 账户名
-		char equID[32];		///< 设备ID
-		unsigned int size;		///< 数据区长度
 	};
 
 	CXlProtocol::CmdHeader cmdHeader;
@@ -116,15 +102,13 @@ struct CXlHostCmdData
 		CmdStopVod cmdStopVod;
 		CmdOnOffInfo cmdOnOffInfo;
 		CmdUpdateVodAck cmdUpdateVodAck;
-		CmdTalkCmd cmdTalkCmd;
-		CmdTalkData cmdTalkData;
 		char pData[1];
 	};
 	CXlProtocol::CmdTail tail;
 };
 
-typedef std::vector<CXlHostCmdData::CmdContextInfo> HostContextVec;
-typedef std::vector<CXlHostCmdData::CmdFileInfo> HostFileInfoVec;
+typedef std::vector<CXlHostCmdData::CmdContextInfo *> HostContextVec;
+typedef std::vector<CXlHostCmdData::CmdFileInfo *> HostFileInfoVec;
 
 #pragma pack(pop)
 #endif //!__XL_HOST_CMD_H__

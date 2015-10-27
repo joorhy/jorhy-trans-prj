@@ -4,7 +4,7 @@ JO_IMPLEMENT_SINGLETON(DataBus)
 
 CDataBus::CDataBus()
 {
-	m_nUniqueSeq = 0;
+	m_nUniqueSeq = 10000;
 	m_timer.Create(1000, CDataBus::OnTimer, this);
 }
 

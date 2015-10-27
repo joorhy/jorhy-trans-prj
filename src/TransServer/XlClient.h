@@ -85,6 +85,5 @@ private:
 	std::vector<j_string_t> m_transTargetMap;
 
 	int m_nFileTotleSize;
-	j_string_t m_FilePath;							// 用于缓存联络文件存放的地址
 };
 #endif // ~__XL_CLIENT_H_

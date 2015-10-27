@@ -97,7 +97,7 @@ j_result_t CXlChannel::InputData(const j_int32_t nType, const CXlDataBusInfo *re
 		{
 			CXlDataBusInfo *response = (CXlDataBusInfo *)respData;
 			response->header.seq = it->seq;
-			response->header.cmd = CXlProtocol::xld_start_real_play;
+			response->header.cmd = CXlProtocol::xld_real_play;
 			JoDataBus->Response(*response);
 		}
 		TUnlock(m_vecLocker);
@@ -120,7 +120,7 @@ j_result_t CXlChannel::InputData(const j_int32_t nType, const CXlDataBusInfo *re
 		{
 			CXlDataBusInfo *response = (CXlDataBusInfo *)respData;
 			response->header.seq = it->seq;
-			response->header.cmd = (response->header.cmd == CXlProtocol::xld_start_vod_play) ? CXlProtocol::xlc_vod_play : CXlProtocol::xlc_vod_download;
+			response->header.cmd = (response->header.cmd == CXlProtocol::xld_vod_play) ? CXlProtocol::xlc_vod_play : CXlProtocol::xlc_vod_download;
 			JoDataBus->Response(*response);
 		}
 		TUnlock(m_vecLocker);

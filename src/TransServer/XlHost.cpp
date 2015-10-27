@@ -99,12 +99,12 @@ j_result_t CXlHost::CreateChannel(const j_int32_t nChannelNum, J_Obj *&pObj)
 
 j_boolean_t CXlHost::IsReady()
 {
-	if (time(0) - m_lastBreatTime > TIME_OUT_INTREVAL)
-	{
-		m_bReady = false;
-		J_OS::LOGINFO("CXlHost::IsReady() TIME_OUT %d - %d", time(0) - m_lastBreatTime);
-	}
-	//m_bReady = true;
+	//if (time(0) - m_lastBreatTime > TIME_OUT_INTREVAL)
+	//{
+	//	m_bReady = false;
+	//	J_OS::LOGINFO("CXlHost::IsReady() TIME_OUT %d - %d", time(0) - m_lastBreatTime);
+	//}
+	m_bReady = true;
 	return m_bReady;
 }
 
@@ -146,7 +146,7 @@ j_result_t CXlHost::OnHandleRead(J_AsioDataBase *pAsioData)
 		CXlHelper::MakeNetData(pAsioData, m_readBuff + sizeof(CXlProtocol::CmdHeader), cmdHeader.length + sizeof(CXlProtocol::CmdTail));
 		pAsioData->ioCall = J_AsioDataBase::j_read_e;
 
-		if (CXlProtocol::xld_start_real_play == cmdHeader.cmd)
+		if (CXlProtocol::xld_real_play == cmdHeader.cmd)
 		{
 			J_OS::LOGDEBUG("read_head cmd = %d len = %d", cmdHeader.cmd, cmdHeader.length);
 		}
@@ -157,7 +157,8 @@ j_result_t CXlHost::OnHandleRead(J_AsioDataBase *pAsioData)
 	{
 		CXlDataBusInfo *pRespData = (CXlDataBusInfo *)m_readBuff;
 		//J_OS::LOGINFO("CXlHost read_data cmd = %d flag = %d", pRespData->header.cmd, pRespData->header.flag);
-		if (CXlProtocol::xld_start_vod_download == pRespData->header.cmd || CXlProtocol::xld_start_vod_play == pRespData->header.cmd)
+		if (CXlProtocol::xld_start_vod_download == pRespData->header.cmd || CXlProtocol::xld_vod_play == pRespData->header.cmd
+			|| CXlProtocol::xld_stop_vod_download == pRespData->header.cmd)
 		{
 			if (pRespData->header.flag != 2)
 				J_OS::LOGINFO("read_data cmd = %d flag = %d", pRespData->header.cmd, pRespData->header.flag);
@@ -176,13 +177,16 @@ j_result_t CXlHost::OnHandleRead(J_AsioDataBase *pAsioData)
 		case CXlProtocol::xld_alarm_info:
 			OnAlarmInfo(*pRespData);
 			break;
-		case CXlProtocol::xld_start_real_play:
+		case CXlProtocol::xld_real_play:
 			assert(pRespData->header.length + sizeof(CXlProtocol::CmdTail) == pAsioData->ioRead.finishedLen);
 			OnRealData(pRespData);
 			break;
-		case CXlProtocol::xld_start_vod_play:
+		case CXlProtocol::xld_vod_play:
 		case CXlProtocol::xld_start_vod_download:
 			OnVodData(pRespData);
+			break;
+		case CXlProtocol::xld_stop_vod_download:
+			OnVodStop(pRespData);
 			break;
 		case CXlProtocol::xld_conrrent_time:
 			OnConrrectTime(*pRespData);
@@ -411,7 +415,7 @@ j_result_t CXlHost::OnVodData(const CXlDataBusInfo *respData)
 		if (respData->header.flag == CXlProtocol::xl_ctrl_end || respData->header.flag == CXlProtocol::xl_ctrl_stop)
 		{
 			J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->hostResponse.vodData.channel & 0xFF);
-			J_OS::LOGINFO("FIle TotleSize = %d", m_nDownloadSize);
+			J_OS::LOGINFO("File TotleSize = %d", m_nDownloadSize);
 			if (pXlChannel != NULL)
 			{
 				CXlDataBusInfo *cmdData = (CXlDataBusInfo *)respData;
@@ -444,6 +448,13 @@ j_result_t CXlHost::OnVodData(const CXlDataBusInfo *respData)
 	}
 	TUnlock(m_channelLocker);
 
+	return J_OK;
+}
+
+j_result_t CXlHost::OnVodStop(const CXlDataBusInfo *respData)
+{
+	const_cast<CXlDataBusInfo *>(respData)->header.cmd = CXlProtocol::xld_stop_vod_download;
+	JoDataBus->Response(*respData);
 	return J_OK;
 }
 
@@ -533,7 +544,7 @@ j_result_t CXlHost::StartRealPlay(const CXlDataBusInfo &cmdData)
 				CXlDataBusInfo hostCmdData = { 0 };
 				strcpy(hostCmdData.hostRequest.realPlay.szID, m_hostId.c_str());
 				hostCmdData.hostRequest.realPlay.llChnStatus = cmdData.clientRequest.realPlay.channel;
-				CXlHelper::MakeRequest(CXlProtocol::xld_start_real_play, cmdData.header.flag, cmdData.header.seq,
+				CXlHelper::MakeRequest(CXlProtocol::xld_real_play, cmdData.header.flag, cmdData.header.seq,
 					(char *)&hostCmdData.hostRequest.realPlay, sizeof(XlHostRequest::RealPlay), m_dataBuffer);
 
 				J_StreamHeader streamHeader = { 0 };
@@ -579,7 +590,7 @@ j_result_t CXlHost::StopRealPlay(const CXlDataBusInfo &cmdData)
 					CXlDataBusInfo hostCmdData = { 0 };
 					strcpy(hostCmdData.hostRequest.realPlay.szID, m_hostId.c_str());
 					hostCmdData.hostRequest.realPlay.llChnStatus = cmdData.clientRequest.realPlay.channel;
-					CXlHelper::MakeRequest(CXlProtocol::xld_stop_real_play, cmdData.header.flag, cmdData.header.seq, 
+					CXlHelper::MakeRequest(CXlProtocol::xld_real_play, cmdData.header.flag, cmdData.header.seq, 
 						(char *)&hostCmdData.hostRequest.realPlay, sizeof(XlHostRequest::RealPlay), m_dataBuffer);
 
 					J_StreamHeader streamHeader = { 0 };
@@ -642,7 +653,7 @@ j_result_t CXlHost::StartVod(const CXlDataBusInfo &cmdData)
 				hostCmdData.hostRequest.startVod.tmStartTime = cmdData.clientRequest.startVod.tmStartTime;
 				hostCmdData.hostRequest.startVod.tmEndTime = cmdData.clientRequest.startVod.tmEndTime;
 
-				CXlProtocol::CmdType cmd = CXlProtocol::xld_start_vod_play;
+				CXlProtocol::CmdType cmd = CXlProtocol::xld_vod_play;
 				if (cmdData.header.cmd == CXlProtocol::xlc_vod_download)
 				{
 					cmd = CXlProtocol::xld_start_vod_download;
@@ -694,10 +705,17 @@ j_result_t CXlHost::StopVod(const CXlDataBusInfo &cmdData)
 					hostCmdData.hostRequest.stopVod.session = cmdData.clientRequest.startVod.sessionId;
 					strcpy(hostCmdData.hostRequest.stopVod.szID, m_hostId.c_str());
 					hostCmdData.hostRequest.stopVod.llChnStatus = cmdData.clientRequest.startVod.channel;
-					CXlProtocol::CmdType cmd = CXlProtocol::xld_start_vod_play;
+					CXlProtocol::CmdType cmd = CXlProtocol::xld_vod_play;
 					if (cmdData.header.cmd == CXlProtocol::xlc_vod_download)
 					{
-						cmd = CXlProtocol::xld_start_vod_download;
+						if (cmdData.header.flag == CXlProtocol::xl_ctrl_start)
+						{
+							cmd = CXlProtocol::xld_start_vod_download;
+						}
+						else if (cmdData.header.flag == CXlProtocol::xl_ctrl_stop)
+						{
+							cmd = CXlProtocol::xld_stop_vod_download;
+						}
 					}
 					CXlHelper::MakeRequest(cmd, cmdData.header.flag, cmdData.header.seq, 
 						(char *)&hostCmdData.hostRequest.stopVod, sizeof(XlHostRequest::StopVod), m_dataBuffer);
@@ -793,6 +811,20 @@ j_result_t CXlHost::SendFile(const CXlDataBusInfo &cmdData)
 	int nHeaderLen = 0;
 	for (; it != m_fileInfoVec.end(); it++)
 	{
+		char pFilePath[256] = { 0 };
+		GetPrivateProfileString("file_info", "path", "E:/FileRecord", pFilePath, sizeof(pFilePath), g_ini_file);
+		sprintf(pFilePath, "%s/%s", pFilePath, (*it)->pFileName);
+
+		FILE *fp = fopen(pFilePath, "rb+");
+		if (fp == NULL)
+		{
+			continue;
+		}
+
+		_fseeki64(fp, 0, SEEK_END);
+		(*it)->header.ulFileSize = _ftelli64(fp);
+		_fseeki64(fp, 0, SEEK_SET);
+
 		/// MD5 initialize
 		MD5_CTX md5Ctx = { 0 };
 		MD5Init(&md5Ctx);
@@ -806,11 +838,6 @@ j_result_t CXlHost::SendFile(const CXlDataBusInfo &cmdData)
 		m_ringBuffer.PushBuffer(m_dataBuffer, streamHeader);
 
 		/// Send File
-		char pFilePath[256] = { 0 };
-		GetPrivateProfileString("file_info", "path", "E:/FileRecord", pFilePath, sizeof(pFilePath), g_ini_file);
-		sprintf(pFilePath, "%s/%s", pFilePath, (*it)->pFileName);
-
-		FILE *fp = fopen(pFilePath, "rb+");
 		if (fp != NULL)
 		{
 			int nReadLen = 0;

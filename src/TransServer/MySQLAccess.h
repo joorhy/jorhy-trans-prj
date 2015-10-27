@@ -72,6 +72,8 @@ public:
 	j_result_t GetContextList(const char *pHostId, HostContextVec &contextVec);
 	/// 获取文件列表
 	j_result_t GetFileInfoList(const char *pHostId, HostFileInfoVec &fileVec);
+	/// 检查某条数据是否存在
+	j_boolean_t DataIsExist(const char *pHostId);
 
 	/*int	CMySQLAccess::Ansi2UTF8(LPCSTR sInput, j_string_t& sOutput);
 
