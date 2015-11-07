@@ -218,9 +218,7 @@ void CXlHelper::GetTimestamp(j_boolean_t isMillisecond, char outTimeInterval[])
  ***********************************************************************************************************/
 j_string_t CXlHelper::RenameFile(const j_string_t oldFileName)
 {
-	char timeInterval[arr_size] = { 0 };
-	GetTimestamp(true, timeInterval);																				// 获取当前系统的时间戳
-
+	const char* newGuid = CreateNewGuid();																			// 创建一个新的Guide,用于更新文件名
 	char fileName[128] = { 0 };
 	strcpy(fileName, oldFileName.c_str());
 	char *ext = strrchr(fileName, '.');
@@ -236,7 +234,7 @@ j_string_t CXlHelper::RenameFile(const j_string_t oldFileName)
 	j_string_t newFileName;
 
 	newFileName.append(loc_str);																					// 文件名
-	loc_str = timeInterval;																							// 时间戳
+	loc_str = newGuid;																								// Guid
 	newFileName.append(loc_str);
 	newFileName.append(".");																						// .
 	loc_str = ext;																									// 扩展名
@@ -385,109 +383,29 @@ bool CXlHelper::ActionTimestampCheck(long long time, long timezone)
 }
 
 
-int	CXlHelper::Ansi2UTF8(LPCSTR sInput, j_string_t &sOutput)
+/***********************************************************************************************************
+ * 程序创建：赵进军                     程序修改:赵进军
+ * 函数功能：创建一个新唯一的Guid
+ * 参数说明：null
+ * 注意事项：
+ * 要想修改生成的Guid的格式请在"_%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X"该字符串开始处进行修改
+ * 修改日期：2015/10/27 15:08:00
+ ***********************************************************************************************************/
+const char* CXlHelper::CreateNewGuid()
 {
-	int	 _utf8Size = SIZE_BUFF;
-	CHAR *_utf8Buff = new CHAR[SIZE_BUFF];
-	j_wstring_t tmpUnicode;
-
-	if (Ansi2Unicode(sInput, tmpUnicode) <= 0)
-		return 0;
-
-	LPCWSTR wInput(tmpUnicode.c_str());
-	int u8Len = WideCharToMultiByte(CP_UTF8, 0, wInput, wcslen(wInput), NULL, 0, NULL, NULL);
-
-	if (u8Len + 1 > _utf8Size)
+	static char buf[64] = { 0 };
+	GUID guid;
+	if (S_OK == ::CoCreateGuid(&guid))
 	{
-		if (_utf8Buff != NULL)
-			delete[] _utf8Buff;
-		_utf8Size = u8Len + 1;
-		_utf8Buff = new CHAR[_utf8Size];
+		_snprintf(buf, sizeof(buf)
+			, "_%08X-%04X-%04X-%02X%02X-%02X%02X%02X%02X%02X%02X"
+			, guid.Data1
+			, guid.Data2
+			, guid.Data3
+			, guid.Data4[0], guid.Data4[1]
+			, guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5]
+			, guid.Data4[6], guid.Data4[7]
+			);
 	}
-
-	if (u8Len == WideCharToMultiByte(CP_UTF8, 0, wInput, wcslen(wInput), _utf8Buff, u8Len, NULL, NULL))
-	{
-		_utf8Buff[u8Len] = '\0';
-		sOutput = _utf8Buff;
-		return u8Len;
-	}
-
-	return 0;
-}
-
-
-
-//ascii 转 Utf8
-j_string_t CXlHelper::ASCII2UTF_8(j_string_t &strAsciiCode)
-{
-	j_string_t strRet("");
-	//先把 ascii 转为 unicode
-	j_wstring_t wstr = Acsi2WideByte(strAsciiCode);
-	//最后把 unicode 转为 utf8
-	strRet = Unicode2Utf8(wstr);
-	return strRet;
-}
-
-
-
-//ascii 转 Unicode
-j_wstring_t CXlHelper::Acsi2WideByte(j_string_t &strascii)
-{
-	int widesize = MultiByteToWideChar(CP_ACP, 0, (char*)strascii.c_str(), -1, NULL, 0);
-	if (widesize == ERROR_NO_UNICODE_TRANSLATION)
-	{
-		throw std::exception("Invalid UTF-8 sequence.");
-	}
-	if (widesize == 0)
-	{
-		throw std::exception("Error in conversion.");
-	}
-	std::vector<wchar_t> resultstring(widesize);
-	int convresult = MultiByteToWideChar(CP_ACP, 0, (char*)strascii.c_str(), -1, &resultstring[0], widesize);
-
-
-	if (convresult != widesize)
-	{
-		throw std::exception("La falla!");
-	}
-
-	return j_wstring_t(&resultstring[0]);
-}
-
-
-//Unicode 转 Utf8
-j_string_t CXlHelper::Unicode2Utf8(const j_wstring_t &widestring)
-{
-	int utf8size = ::WideCharToMultiByte(CP_UTF8, 0, widestring.c_str(), -1, NULL, 0, NULL, NULL);
-	if (utf8size == 0)
-	{
-		throw std::exception("Error in conversion.");
-	}
-
-	std::vector<char> resultstring(utf8size);
-
-	int convresult = ::WideCharToMultiByte(CP_UTF8, 0, widestring.c_str(), -1, &resultstring[0], utf8size, NULL, NULL);
-
-	if (convresult != utf8size)
-	{
-		throw std::exception("La falla!");
-	}
-
-	return j_string_t(&resultstring[0]);
-}
-
-//wstring 转 string 数据类型
-j_string_t CXlHelper::WstrToStr(const j_wstring_t& ws)
-{
-	j_string_t curLocale = setlocale(LC_ALL, NULL);        // curLocale = "C";
-	setlocale(LC_ALL, "chs");
-	const wchar_t* _Source = ws.c_str();
-	size_t _Dsize = 2 * ws.size() + 1;
-	char *_Dest = new char[_Dsize];
-	memset(_Dest, 0, _Dsize);
-	wcstombs(_Dest, _Source, _Dsize);
-	j_string_t result = _Dest;
-	delete[]_Dest;
-	setlocale(LC_ALL, curLocale.c_str());
-	return result;
+	return (const char*)buf;
 }

@@ -25,25 +25,15 @@ namespace XlClientRequest
 	{
 		char hostId[32];		///< 设备ID
 		long long channel;		///< 通道号
-		CRingBuffer *pBuffer;
 	};
 
-	struct StartVod
+	struct VodPlay
 	{
 		GUID sessionId;			///< 回话ID
 		char hostId[32];		///< 设备ID
 		long long channel;		///< 通道号	
 		time_t tmStartTime;		///< 开始时间
 		time_t tmEndTime;		///< 结束时间
-		CRingBuffer *pBuffer;
-	};
-
-	struct StopVod
-	{
-		GUID sessionId;			///< 回话ID
-		char hostId[32];		///< 设备ID
-		long long channel;		///< 通道号	
-		CRingBuffer *pBuffer;
 	};
 
 	struct ContextInfo
@@ -105,38 +95,47 @@ namespace XlClientResponse
 		unsigned char  code;	///< 0-成功, 1-失败
 	};
 
+	struct VehicleStatus
+	{
+		char szID[32];					///< 车号
+		time_t tmTimeStamp;    			///< 时间戳
+		long long llStatus;    			///< 车辆状态
+		double dLatitude;				///< 维度
+		double dLongitude;     			///< 经度
+		double dGPSSpeed;    			///< GPS速度
+		double dDirection;				///< 车辆前进方向
+	};
+
 	struct AlarmInfo
 	{
 		char szID[32];					///< 车号
-		time_t tmTimeStamp;				///< 时间戳
-		char bAlarm;					///< 报警类型
-		double dLatitude;
-		double dLongitude;
-		double dGPSSpeed;
+		time_t  tmTimeStamp;			///< 时间戳
+		int  nKind;    					///< 报警种类
+		int  nType;						///< 报警类型0:解除报警  1:报警产生
 	};
 
 	struct TransmitMessage
 	{
-		unsigned long ulMessageID;    	/// 消息ID
-		int state;  					/// 状态
+		unsigned long ulMessageID;    	///< 消息ID
+		int state;  					///< 状态
 	};
 
 	struct TransmitFile
 	{
-		unsigned long ulFileID;    		/// 文件ID
-		int state;  					/// 状态
+		unsigned long ulFileID;    		///< 文件ID
+		int state;  					///< 状态
 	};
 
 	struct EquipmentState
 	{
-		char szID[32];					/// 设备ID
-		int  state;						/// 1在线；0离线
+		char szID[32];					///< 设备ID
+		int  state;						///< 1在线；0离线
 	};
 
 	struct TalkCmd
 	{
 		char account[32];   	///< 账户名
-		char equID[32];		///< 设备ID
+		char equID[32];			///< 设备ID
 		int state;
 
 	};
@@ -164,6 +163,23 @@ namespace XlHostRequest
 		int nTotalChannels;         //I??A,oEu
 		int nTypeSize;				//EaInI.AaDI
 		int nNameSize;		  		//I??AAu3A3$?E???O!?#!?,o?a
+	};
+
+	struct VehiclleStatus
+	{
+		time_t tmTimeStamp;			///< 时间戳
+		long long llStatus;    		///< 车辆状态
+		double dLatitude;			///< 纬度
+		double dLongitude;			///< 经度
+		double dGPSSpeed;			///< GPS速度
+		double dDirection;			///< 车辆前进方向
+	};
+
+	struct AlarmInfo
+	{
+		time_t  tmTimeStamp;		///< 时间戳
+		int  nKind;    				///< 报警种类
+		int  nType;					///< 报警类型0:解除报警  1:报警产生
 	};
 
 	struct RealPlay
@@ -257,10 +273,44 @@ namespace XlHostResponse
 {
 	struct Message
 	{
+		struct TransFile
+		{
+			long lFileID;
+			int nState;   	  //0 拷贝成功 
+			time_t tmTime;    //拷贝完成时的时间
+		};
+
+		struct TransMessage
+		{
+			long lMessageID;
+			int nState;      //0 消息已读 
+			time_t tmTime;   //消息已读时的时间
+		};
+
+		struct CamaraStatus
+		{
+			int nStatusSize;	//摄像头状态
+			time_t tmTime;		//检测时间
+		};
+
+		struct TransMessageReceive
+		{
+			long lUserID;		//用户ID
+			int nTitleSize;		//消息标题
+			int nContentSize;	//消息内容
+		};
+
 		char szID[32];					///< 车号
 		unsigned int unMsg;				///< 消息码
 		unsigned long ulDataSize;		///< 消息数据长度
-		char data[1];					///< 消息体
+		union
+		{
+			TransFile transFile;
+			TransMessage transMassge;
+			CamaraStatus camaraStatus;
+			TransMessageReceive transMessageReceive;
+			char data[1];					///< 消息体
+		};
 	};
 
 	struct HostId
@@ -269,6 +319,16 @@ namespace XlHostResponse
 	};
 
 	struct CorrectTime
+	{
+		unsigned char  code;			///< 0-成功, 1-失败
+	};
+
+	struct VehicleStatus
+	{
+		unsigned char  code;			///< 0-成功, 1-失败
+	};
+
+	struct AlarmInfo
 	{
 		unsigned char  code;			///< 0-成功, 1-失败
 	};
@@ -282,15 +342,6 @@ namespace XlHostResponse
 		char mediaTypeNum;			///< 媒体类型
 		int  chNameSize;			///< 通道名称长度
 		char data[1];				///< 通道名称
-	};
-
-	struct AlarmInfo
-	{
-		time_t tmTimeStamp;				///< 时间戳
-		char bAlarm;					///< 报警类型
-		double dLatitude;
-		double dLongitude;
-		double dGPSSpeed;
 	};
 
 	struct RealData
@@ -365,8 +416,7 @@ struct CXlDataBusInfo
 			XlClientRequest::Login login;
 			XlClientRequest::RealAlarm realAlarm;
 			XlClientRequest::RealPlay realPlay;
-			XlClientRequest::StartVod startVod;
-			XlClientRequest::StopVod stopVod;
+			XlClientRequest::VodPlay vodPlay;
 			XlClientRequest::ContextInfo contextInfo;
 			XlClientRequest::FileInfo fileInfo;
 			XlClientRequest::TalkCmd talkCmd;
@@ -378,6 +428,7 @@ struct CXlDataBusInfo
 			XlClientResponse::Login login;
 			XlClientResponse::Logout logout;
 			XlClientResponse::ErrorCode errorCode;
+			XlClientResponse::VehicleStatus vehicleStatus;
 			XlClientResponse::AlarmInfo alarmInfo;
 			XlClientResponse::TransmitMessage transmitMessage;
 			XlClientResponse::TransmitFile transmitFile;
@@ -389,6 +440,8 @@ struct CXlDataBusInfo
 		union {
 			XlHostRequest::ConrrectTime conrrectTime;
 			XlHostRequest::ConfigDev configDev;
+			XlHostRequest::VehiclleStatus vehicleStatus;
+			XlHostRequest::AlarmInfo alarmInfo;
 			XlHostRequest::RealPlay realPlay;
 			XlHostRequest::StartVod startVod;
 			XlHostRequest::StopVod stopVod;
@@ -402,8 +455,8 @@ struct CXlDataBusInfo
 			XlHostResponse::Message message;
 			XlHostResponse::HostId hostId;
 			XlHostResponse::ConrrectTime conrrectTime;
-			XlHostResponse::HostInfo hostInfo;
 			XlHostResponse::AlarmInfo alarmInfo;
+			XlHostResponse::HostInfo hostInfo;
 			XlHostResponse::RealData realData;
 			XlHostResponse::StopReal stopReal;
 			XlHostResponse::VodData vodData;

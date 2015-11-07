@@ -341,7 +341,7 @@ j_result_t CSqlServerAccess::GetDevInfo(XlHostResponse::HostInfo &hostInfo)
 	return J_OK;
 }
 
-j_result_t CSqlServerAccess::InsertAlarmInfo(const char *pHostId, const XlHostResponse::AlarmInfo& alarmInfo)
+j_result_t CSqlServerAccess::InsertAlarmInfo(const char *pHostId, const XlHostRequest::VehiclleStatus& vehicleStatus)
 {
 	try 
 	{

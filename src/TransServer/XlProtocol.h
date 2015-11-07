@@ -44,16 +44,18 @@ struct CXlProtocol
 	/// 消息类型
 	enum MessageType
 	{
-		xld_copyed_file = 0x01,				///< 已拷贝文件
-		xld_readed_file = 0x02,				///< 已读消息
-		xld_camera_status = 0x03,			///< 摄像头状态
+		xld_file_recived = 0x01,			///< 文件已接收
+		xld_file_copyed = 0x02,				///< 文件已拷贝
+		xld_message_recived = 0x03,			///< 消息已接收
+		xld_message_readed = 0x04,			///< 摄像已读
 
-		xlc_msg_force_offline = 0x01,		///< 用户被强制下线
-		xlc_msg_user_deleted = 0x02,		///< 用户被删除
-		xlc_copyed_file = 0x03,				///< 已拷贝文件
-		xlc_readed_file = 0x04,				///< 已读消息
-		xlc_camera_status = 0x05,			///< 摄像头状态
-		xlc_dev_info_changed = 0x06,		///< 设备信息发生变化
+		xlc_file_recived = 0x01,			///< 文件已接收
+		xlc_file_copyed = 0x02,				///< 文件已拷贝
+		xlc_message_recived = 0x03,			///< 消息已接收
+		xlc_message_readed = 0x04,			///< 摄像已读
+
+		xlc_msg_force_offline = 0x31,		///< 用户被强制下线
+		xlc_msg_user_deleted = 0x032,		///< 用户被删除
 
 		xlc_dev_state = 0xA0,				///< 设备状态
 	};
@@ -88,13 +90,14 @@ struct CXlProtocol
 		xld_real_view = 0x12,				///< 开始实时视频预览
 		//远程回放&视频下载
 		xld_vod_play = 0x14,				///< 录像回放
-		xld_start_vod_download = 0x15,		///< 开始录像下载
-		xld_stop_vod_download = 0x16,		///< 停止录像下载
+		xld_vod_download = 0x15,			///< 录像下载
 		//运行数据记录
-		xld_alarm_info = 0x21,				///< 实时报警推送
+		xld_vehicle_status = 0x21,			///< 车辆实时状态
 		xld_get_on_off_log = 0x22,			///< 开关机日志
 		xld_first_vod_timestamp = 0x23,		///< 推送/获取第一个视频文件的开始时间
 		xld_update_vod_info = 0x24,			///< 更新录像信息
+		xld_alarm_info = 0x25,				///< 报警信息
+		//xld_
 		//联络数据传输
 		xld_upload_file = 0x30,				///< 文件传输
 		xld_trans_context = 0x31,			///< 文本消息通讯
@@ -113,7 +116,8 @@ struct CXlProtocol
 		xlc_login = 0x52,					///< 用户登录
 		xlc_logout = 0x53,					///< 注销登录
 		//实时报警
-		xlc_real_alarm = 0x60,				///< 实时报警信息使能
+		xlc_vehicle_status = 0x60,			///< 实时报警信息使能
+		xlc_alarm_info = 0x61,				///< 实时报警信息使能
 		//实时视频
 		xlc_real_play = 0x70,				///< 实时视频播放
 		//远程回放

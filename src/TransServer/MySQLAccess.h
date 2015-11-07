@@ -46,8 +46,10 @@ public:
 	j_result_t UpdateDevInfo(const XlHostResponse::HostInfo &hostInfo, bool bOnline);
 	/// 获取设备信息
 	j_result_t GetDevInfo(XlHostResponse::HostInfo &hostInfo);
-	/// 增加报警信息
-	j_result_t InsertAlarmInfo(const char *pHostId, const XlHostResponse::AlarmInfo& alarmInfo);
+	/// 插入车辆状态信息到数据表里面
+	j_result_t AddVehicleStatus(const char *pHostId, const XlHostRequest::VehiclleStatus& vehicleStatus);
+	/// 插入报警信息到数据表里面
+	j_result_t AddAlarmInfo(const char *pHostId, const XlHostRequest::AlarmInfo& alarmInfo);
 	/// 获得设备日志的最近时间
 	time_t GetDevLogLastTime(const char *pHostId);
 	/// 增加日志信息
@@ -62,8 +64,12 @@ public:
 	j_result_t AddFileInfo(long lUserID, const char *pFileName, const char *pFilePath, std::vector<j_string_t> &vecHost);
 	/// 更新文本信息
 	j_result_t UpdateContextInfo(long lMessageID, int nMessageState, int nDetailState);
+	/// 更新文本信息
+	j_result_t UpdateContextInfo(long lMessageID, int nDetailState);
 	/// 更新文件
 	j_result_t UpdateFileInfo(long lFileID, int nFileState, int nDetailState);
+	/// 更新文件
+	j_result_t UpdateFileInfo(long lFileID, int nDetailState);
 	/// 删除文本信息
 	j_result_t DelContextInfo(long lMessageID);
 	/// 删除文件
@@ -74,10 +80,14 @@ public:
 	j_result_t GetFileInfoList(const char *pHostId, HostFileInfoVec &fileVec);
 	/// 检查某条数据是否存在
 	j_boolean_t DataIsExist(const char *pHostId);
-
-	/*int	CMySQLAccess::Ansi2UTF8(LPCSTR sInput, j_string_t& sOutput);
-
-	int	CMySQLAccess::Ansi2Unicode(LPCSTR input, j_wstring_t& output);*/
+	/// 检查符合查询条件的数据条数
+	j_int32_t DataCount(const char *query);
+	/// 根据指定的查询条件获取用户ID
+	j_long_t GetUserID(const char *query);
+	/// 根据消息ID获取对应的用户ID
+	j_long_t GetUserIDFrmMsg(long lMessageID);
+	/// 根据文件ID获取对应的用户ID
+	j_long_t GetUserIDFrmFile(long lFileID);
 private:
 	MYSQL *m_mysql;
 	j_boolean_t m_bConnected;

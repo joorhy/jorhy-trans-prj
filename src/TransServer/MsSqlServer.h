@@ -47,7 +47,7 @@ public:
 	/// 获取设备信息
 	j_result_t GetDevInfo(XlHostResponse::HostInfo &hostInfo);
 	/// 增加报警信息
-	j_result_t InsertAlarmInfo(const char *pHostId, const XlHostResponse::AlarmInfo& alarmInfo);
+	j_result_t InsertAlarmInfo(const char *pHostId, const XlHostRequest::VehiclleStatus& vehicleStatus);
 	/// 获得设备日志的最近时间
 	time_t GetDevLogLastTime(const char *pHostId);
 	/// 增加日志信息

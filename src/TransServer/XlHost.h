@@ -45,12 +45,12 @@ private:
 	j_result_t OnPrepare(const CXlDataBusInfo &respData);
 	/// 报警消息(包括GPS)
 	j_result_t OnAlarmInfo(const CXlDataBusInfo &respData);
+	/// 车辆实时状态
+	j_result_t OnVehicleStatus(const CXlDataBusInfo &respData);
 	/// 实时视频数据
 	j_result_t OnRealData(const CXlDataBusInfo *respData);
 	/// 历史视频数据
 	j_result_t OnVodData(const CXlDataBusInfo *respData);
-	/// 停止历史视频数据
-	j_result_t OnVodStop(const CXlDataBusInfo *respData);
 	/// 设置时钟的反馈信息
 	j_result_t OnConrrectTime(const CXlDataBusInfo &respData);
 	/// 获取设备信息的反馈信息
@@ -85,9 +85,6 @@ private:
 	j_result_t TalkBackData(const CXlDataBusInfo &cmdData);
 
 private:
-	void GetChannel(j_uint64_t channel);
-
-private:
 	j_boolean_t m_bReady;
 	j_socket_t m_socket;
 	j_string_t m_hostId;
@@ -103,11 +100,7 @@ private:
 
 	J_OS::TLocker_t m_vecClientLocker;
 	std::vector<J_Client *> m_vecClient;
-
-	std::vector<int> m_vecChannel;
-	ChannelMap m_channelRealMap;
-
-	std::map<int, int> m_channelVodMap;
+	std::map<int, int> m_seqMap;
 
 	HostContextVec m_contextVec;
 	HostFileInfoVec m_fileInfoVec;

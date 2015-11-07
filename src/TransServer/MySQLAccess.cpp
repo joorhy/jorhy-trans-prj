@@ -174,7 +174,10 @@ j_result_t CMySQLAccess::GetUserNameById(j_int32_t userId, j_string_t &userName)
 					if (strcmp("AccountName", fd->name) == 0)
 					{
 						sql_row = mysql_fetch_row(result);
-						userName = sql_row[i];
+						if (sql_row != NULL)
+						{
+							userName = sql_row[i];
+						}
 						break;
 					}
 				}
@@ -388,19 +391,72 @@ j_result_t CMySQLAccess::GetDevInfo(XlHostResponse::HostInfo &hostInfo)
 	return J_OK;
 }
 
-j_result_t CMySQLAccess::InsertAlarmInfo(const char *pHostId, const XlHostResponse::AlarmInfo& alarmInfo)
+
+/***********************************************************************************************************
+ * 程序创建：刘进朝                     程序修改:赵进军
+ * 函数功能：插入车辆状态信息到数据表里面
+ * 参数说明：
+ *       pHostId：设备ID
+ * vehicleStatus：车辆状态信息
+ * 注意事项：null
+ * 修改日期：2015/10/31 16:20:00
+ ***********************************************************************************************************/
+j_result_t CMySQLAccess::AddVehicleStatus(const char *pHostId, const XlHostRequest::VehiclleStatus& vehicleStatus)
 {
 	if (!m_bConnected)
-	{
 		return J_DB_ERROR;
-	}
 
 	try
 	{
 		char strCmd[512] = { 0 };
-		//sprintf(strCmd, "INSERT INTO Alarm(EquipmentID,Alarm,GPS_Latitude,GPS_Longitude,GPS_Speed,Speed,TimeStamp)VALUES('%s',%I64d,%f,%f,%f,%f,%d);",
-		//	pHostId, alarmInfo.bAlarm & 0xFF, alarmInfo.gps.dLatitude, alarmInfo.gps.dLongitude, alarmInfo.gps.dGPSSpeed, alarmInfo.speed, alarmInfo.tmTimeStamp);
-		//m_pConn->Execute((_bstr_t)strCmd, NULL, adCmdText);
+		sprintf(strCmd, "INSERT INTO vehicleStatus(EquipmentID,Status,Latitude,Longtude,GPSSpeed,Direction,TimeStamp)VALUES('%s','%I64d','%d','%d','%d','%d',%I64d);",
+			pHostId,																								// 设备ID
+			vehicleStatus.llStatus,																					// 车辆状态
+			vehicleStatus.dLatitude,																				// 维度
+			vehicleStatus.dLongitude,																				// 经度
+			vehicleStatus.dGPSSpeed,																				// 速度
+			vehicleStatus.dDirection,																				// 角度
+			vehicleStatus.tmTimeStamp																			    // 时间戳
+			);
+		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+		if (ret != 0)
+			return J_DB_ERROR;
+	}
+	catch (...)
+	{
+		return J_DB_ERROR;
+	}
+
+	return J_OK;
+}
+
+
+/***********************************************************************************************************
+ * 程序创建：赵进军                     程序修改:赵进军
+ * 函数功能：插入报警信息到数据表里面
+ * 参数说明：
+ *   pHostId：设备ID
+ * alarmInfo：报警信息
+ * 注意事项：null
+ * 修改日期：2015/10/31 16:42:00
+ ***********************************************************************************************************/
+j_result_t CMySQLAccess::AddAlarmInfo(const char *pHostId, const XlHostRequest::AlarmInfo& alarmInfo)
+{
+	if (!m_bConnected)
+		return J_DB_ERROR;
+
+	try
+	{
+		char strCmd[512] = { 0 };
+		sprintf(strCmd, "INSERT INTO alarm(EquipmentID,AlarmKind,AlarmType,TimeStamp)VALUES('%s','%I64d','%d',%I64d);",
+			pHostId,																								// 设备ID
+			alarmInfo.nKind,																						// 报警种类类型
+			alarmInfo.nType,																						// 报警子类类型
+			alarmInfo.tmTimeStamp																					// 时间戳
+			);
+		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+		if (ret != 0)
+			return J_DB_ERROR;
 	}
 	catch (...)
 	{
@@ -442,7 +498,6 @@ time_t CMySQLAccess::GetDevLogLastTime(const char *pHostId)
 	{
 
 	}
-
 	return tmReturn;
 }
 
@@ -588,7 +643,6 @@ j_result_t CMySQLAccess::InsertLogInfo(const char *pHostId, time_t tmStart, time
  ***********************************************************************************************************/
 j_boolean_t CMySQLAccess::DataIsExist(const char *query)
 {
-	mysql_set_character_set(m_mysql, "unicode");
 	int retCount = 0;
 	try
 	{
@@ -712,7 +766,7 @@ j_result_t CMySQLAccess::AddContextInfo(long lUserID, const char *pTitle, const 
 					memset(strCmd, 0, sizeof(strCmd));
 					sprintf(strCmd,																					// 阅读时间和接收时间默认一样，状态默认车载端已经接收
 						"INSERT INTO TransMessageDetail(MessageID,EquipmentID,State,ReceTime,ReadTime)VALUES(%d,'%s','%d','%s','%s');",
-						nMessageID, it->c_str(), 1, &timeInterval, &timeInterval);
+						nMessageID, it->c_str(), 0, &timeInterval, &timeInterval);
 					ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
 				}
 			}
@@ -720,35 +774,6 @@ j_result_t CMySQLAccess::AddContextInfo(long lUserID, const char *pTitle, const 
 			{
 				return J_DB_ERROR;
 			}
-#pragma region [   原来的代码逻辑   ]
-
-			//memset(strCmd, 0, sizeof(strCmd));
-			//sprintf(strCmd, "SELECT MAX(MessageID) FROM TransMessage;");
-
-			//ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-			//if (ret == 0)
-			//{
-			//	MYSQL_ROW sql_row_message_id;
-			//	MYSQL_RES *result_message_id = mysql_store_result(m_mysql);                                         //保存查询到的数据到
-			//	int nMessageID = 0;
-			//	if (result_message_id->row_count != 0)
-			//	{
-			//		sql_row_message_id = mysql_fetch_row(result_message_id);
-			//		if (sql_row_message_id[0] != NULL)
-			//		{
-			//			nMessageID = atol(sql_row_message_id[0]);
-			//		}
-			//	}
-
-			//	std::vector<j_string_t>::iterator it = vecHost.begin();
-			//	for (; it != vecHost.end(); it++)
-			//	{
-			//		memset(strCmd, 0, sizeof(strCmd));
-			//		sprintf(strCmd, "INSERT INTO TransMessageDetail(MessageID,EquipmentID)VALUES(%d,'%s');", nMessageID, it->c_str());
-			//		ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-			//	}
-			//}
-#pragma endregion
 		}
 
 	}
@@ -809,59 +834,7 @@ j_result_t CMySQLAccess::AddFileInfo(long lUserID, const char *pFileName, const 
 	{
 		return J_DB_ERROR;
 	}
-
 	return J_OK;
-
-#pragma region [   修改之前的代码   ]
-	//if (!m_bConnected)
-	//{
-	//	return J_DB_ERROR;
-	//}
-
-	//try
-	//{
-	//	char strCmd[128] = { 0 };
-	//	sprintf(strCmd, "INSERT INTO TransFile(UserID,Name,FilePath)VALUES(%d,'%s','%s');",
-	//		lUserID, pTitle, pFilePath);
-	//	int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-	//	if (ret == 0)
-	//	{
-	//		memset(strCmd, 0, sizeof(strCmd));
-	//		sprintf(strCmd, "SELECT MAX(FileID) FROM TransFile;");
-
-	//		ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-	//		if (ret == 0)
-	//		{
-	//			MYSQL_ROW sql_row_file_id;
-	//			MYSQL_RES *result_file_id = mysql_store_result(m_mysql);//保存查询到的数据到
-	//			int nFileID = 0;
-	//			if (result_file_id->row_count != 0)
-	//			{
-	//				sql_row_file_id = mysql_fetch_row(result_file_id);
-	//				if (sql_row_file_id[0] != NULL)
-	//				{
-	//					nFileID = atol(sql_row_file_id[0]);
-	//				}
-	//			}
-
-	//			std::vector<j_string_t>::iterator it = vecHost.begin();
-	//			for (; it != vecHost.end(); it++)
-	//			{
-	//				memset(strCmd, 0, sizeof(strCmd));
-	//				sprintf(strCmd, "INSERT INTO TransFileDetail(FileID,EquipmentID)VALUES(%d,'%s');", nFileID, it->c_str());
-	//				ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
-	//			}
-	//		}
-	//	}
-
-	//}
-	//catch (...)
-	//{
-	//	return J_DB_ERROR;
-	//}
-
-	//return J_OK;
-#pragma endregion
 }
 
 
@@ -870,7 +843,7 @@ j_result_t CMySQLAccess::AddFileInfo(long lUserID, const char *pFileName, const 
  * 函数功能：更新联络消息日志
  * 参数说明：
  *    lMessageID：联络消息ID
- * nMessageState：消息状态
+ * nMessageState：消息状态---该参数不需要,可以根据数据库的状态进行更改
  *  nDetailState：详细状态
  * 注意事项：null
  * 修改日期：2015/10/12 14:15:00
@@ -906,6 +879,77 @@ j_result_t CMySQLAccess::UpdateContextInfo(long lMessageID, int nMessageState, i
 	return J_OK;
 }
 
+/***********************************************************************************************************
+* 程序创建：刘进朝                     程序修改:赵进军
+* 函数功能：更新联络消息日志
+* 参数说明：
+*    lMessageID：联络消息ID
+*  nDetailState：详细状态
+* 注意事项：
+*       TransMessage->0:未发送  1:部分发送  2:未读  3:部分已读   4:全部已读
+* TransMessageDetail->0:信息未发到终端   1:消息未读  2:消息已读  3:消息已删
+* 修改日期：2015/10/12 14:15:00
+***********************************************************************************************************/
+j_result_t CMySQLAccess::UpdateContextInfo(long lMessageID, int nDetailState)
+{
+	if (lMessageID < 0)																								// 当前位置的消息ID不能为负数
+		return J_DB_ERROR;
+
+	if (!m_bConnected)
+		return J_DB_ERROR;
+
+	try
+	{
+		char strCmd[128] = { 0 };
+		sprintf(strCmd, "UPDATE transmessagedetail set State= '%d' WHERE MessageID = '%d'",							// 更新transmessagedetail表消息状态
+			nDetailState, lMessageID);
+		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+
+		if (ret == 0)																								// 更新transmessage表消息状态
+		{
+			memset(strCmd, 0, sizeof(strCmd));
+			sprintf(strCmd, "Select Count(*) from transmessagedetail WHERE MessageID = '%d'", lMessageID);			// 获取transmessagedetail中所有的符合条件的数据
+			int totalCount = DataCount(strCmd);
+
+			memset(strCmd, 0, sizeof(strCmd));																		// 检查是否存在未发送的情况
+			sprintf(strCmd, "Select Count(*) from transmessagedetail WHERE MessageID = '%d' AND State= '0'", lMessageID);
+			int retCount = DataCount(strCmd);
+
+			if (retCount == totalCount)																				// 表示当全部未发送,默认全部无需更改
+				return J_OK;
+
+			memset(strCmd, 0, sizeof(strCmd));
+			if (retCount != 0 && retCount < totalCount)																// 标志 部分未发送
+				sprintf(strCmd, "UPDATE transmessage set DealStatus= '%d' WHERE MessageID = '%d'", 1, lMessageID);
+			else																									// 标志 全部发送
+			{
+				sprintf(strCmd, "Select Count(*) from transmessagedetail WHERE MessageID = '%d' AND State= '1'",	// 文件未复制的数量
+					lMessageID);
+				retCount = DataCount(strCmd);
+
+				memset(strCmd, 0, sizeof(strCmd));
+				if (retCount == totalCount)
+					sprintf(strCmd, "UPDATE transmessage set DealStatus= '%d' WHERE MessageID = '%d'", 2, lMessageID);   // 文件未读
+
+				if (retCount < totalCount && retCount>0)
+					sprintf(strCmd, "UPDATE transmessage set DealStatus= '%d' WHERE MessageID = '%d'", 3, lMessageID);   // 文件部分已读
+
+				if (retCount == 0)
+					sprintf(strCmd, "UPDATE transmessage set DealStatus= '%d' WHERE MessageID = '%d'", 4, lMessageID);	// 文件全部已读
+			}
+			ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+			return	ret == 0 ? J_OK : J_DB_ERROR;
+		}
+		else
+			return J_DB_ERROR;
+	}
+	catch (...)
+	{
+		return J_DB_ERROR;
+	}
+	return J_OK;
+}
+
 
 /***********************************************************************************************************
  * 程序创建：刘进朝                     程序修改:刘进朝
@@ -914,7 +958,10 @@ j_result_t CMySQLAccess::UpdateContextInfo(long lMessageID, int nMessageState, i
  *      lFileID：联络文件ID
  *   nFileState：文件状态
  * nDetailState：详细状态
- * 注意事项：null
+ * 注意事项：当前只做到是否复制这一层，如需增加撤销状态，请修改代码
+ * transfile表数据状态->0:未发送 1:部分发送  2:未复制  3:部分复制  4:全部复制  5:未撤销  6:已撤销  7:正在撤销
+ * transfiledetail表数据状态->0:文件未发到终端  1:文件未复制  2:文件已复制   3:文件未撤销  4:文件已撤销
+ * 以上状态详细参照数据库是设计
  * 修改日期：2015/10/12 14:17:00
  ***********************************************************************************************************/
 j_result_t CMySQLAccess::UpdateFileInfo(long lFileID, int nFileState, int nDetailState)
@@ -924,7 +971,6 @@ j_result_t CMySQLAccess::UpdateFileInfo(long lFileID, int nFileState, int nDetai
 
 	if (!m_bConnected)
 		return J_DB_ERROR;
-
 	try
 	{
 		return J_OK;
@@ -950,11 +996,89 @@ j_result_t CMySQLAccess::UpdateFileInfo(long lFileID, int nFileState, int nDetai
 
 
 /***********************************************************************************************************
+* 程序创建：赵进军                     程序修改:刘进朝
+* 函数功能：更新联络文件日志
+* 参数说明：
+*      lFileID：联络文件ID
+* nDetailState：详细状态
+* 注意事项：当前只做到是否复制这一层，如需增加撤销状态，请修改代码
+* transfile表数据状态->0:未发送 1:部分发送  2:未复制  3:部分复制  4:全部复制  5:未撤销  6:已撤销  7:正在撤销
+* transfiledetail表数据状态->0:文件未发到终端  1:文件未复制  2:文件已复制   3:文件未撤销  4:文件已撤销
+* 以上状态详细参照数据库是设计
+* 修改日期：2015/10/12 14:17:00
+***********************************************************************************************************/
+j_result_t CMySQLAccess::UpdateFileInfo(long lFileID, int nDetailState)
+{
+	if (lFileID < 0)																								// 当前位置的消息ID不能为负数
+		return J_DB_ERROR;
+
+	if (!m_bConnected)
+		return J_DB_ERROR;
+
+	try
+	{
+		char strCmd[128] = { 0 };
+		char timeInterval[arr_size] = { 0 };
+		CXlHelper::GetTimestamp(true, timeInterval);
+
+		if (nDetailState == 2)
+			sprintf(strCmd, "UPDATE transfiledetail set State= '%d',CopyTime ='%s' WHERE FileID = '%d'",			// 更新transfiledetail表消息状态
+			nDetailState, timeInterval, lFileID);
+		else
+			sprintf(strCmd, "UPDATE transfiledetail set State= '%d' WHERE FileID = '%d'", nDetailState, lFileID);   // 更新transfiledetail表消息状态
+		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+
+		if (ret == 0)																								// 更新transfile表消息状态
+		{
+			memset(strCmd, 0, sizeof(strCmd));
+			sprintf(strCmd, "Select Count(*) from transfiledetail WHERE FileID = '%d'", lFileID);					// 获取transfiledetail中所有的符合条件的数据
+			int totalCount = DataCount(strCmd);
+
+			memset(strCmd, 0, sizeof(strCmd));																		// 检查是否存在未发送的情况
+			sprintf(strCmd, "Select Count(*) from transfiledetail WHERE FileID = '%d' AND State= '0'", lFileID);
+			int retCount = DataCount(strCmd);
+
+			if (retCount == totalCount)																				// 表示当全部未发送,默认全部无需更改
+				return J_OK;
+
+			memset(strCmd, 0, sizeof(strCmd));
+			if (retCount != 0 && retCount < totalCount)																// 标志 部分未发送
+				sprintf(strCmd, "UPDATE transfile set State= '%d' WHERE FileID = '%d'", 1, lFileID);
+			else																									// 标志 全部发送
+			{
+				sprintf(strCmd, "Select Count(*) from transfiledetail WHERE FileID = '%d' AND State= '1'", lFileID);// 文件未复制的数量
+				retCount = DataCount(strCmd);
+
+				memset(strCmd, 0, sizeof(strCmd));
+				if (retCount == totalCount)																			// 表示还有部分未复制
+					sprintf(strCmd, "UPDATE transfile set State= '%d' WHERE FileID = '%d'", 2, lFileID);            // 文件未复制
+
+				if (retCount < totalCount && retCount>0)
+					sprintf(strCmd, "UPDATE transfile set State= '%d' WHERE FileID = '%d'", 3, lFileID);            // 文件部分复制
+
+				if (retCount == 0)
+					sprintf(strCmd, "UPDATE transfile set State= '%d' WHERE FileID = '%d'", 4, lFileID);			// 文件全部复制
+			}
+			ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+			return	ret == 0 ? J_OK : J_DB_ERROR;
+		}
+		else
+			return J_DB_ERROR;
+	}
+	catch (...)
+	{
+		return J_DB_ERROR;
+	}
+	return J_OK;
+}
+
+
+/***********************************************************************************************************
  * 程序创建：刘进朝                     程序修改:赵进军
- * 函数功能：删除联络消息日志
+ * 函数功能：删除联络消息日志,实际上只是修改相信信息里面的状态就可以了
  * 参数说明：
  * lMessageID：联络消息ID
- * 注意事项：null
+ * 注意事项：0:信息未发到终端   1:文件未读  2:文件已读  3:文件已删  默认使用0:信息未发到终端
  * 修改日期：2015/10/12 14:18:00
  ***********************************************************************************************************/
 j_result_t CMySQLAccess::DelContextInfo(long lMessageID)
@@ -967,24 +1091,26 @@ j_result_t CMySQLAccess::DelContextInfo(long lMessageID)
 
 	try
 	{
-		/// 怎样删除？
+		char strCmd[128] = { 0 };
+		sprintf(strCmd, "UPDATE transmessagedetail SET State = '3' WHERE MessageID = '%d'; ", lMessageID);
+		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+		return ret == 0 ? J_OK : J_DB_ERROR;
 	}
 	catch (...)
 	{
 		return J_DB_ERROR;
 	}
-
-	/// TODO by zhao jin jun
 	return J_OK;
 }
 
 
 /***********************************************************************************************************
  * 程序创建：刘进朝                     程序修改:赵进军
- * 函数功能：删除联络文件日志
+ * 函数功能：删除联络文件日志,撤销操作目前只针对所有的对象执行的
  * 参数说明：
  *  lFileID：联络文件ID
- * 注意事项：null
+ * 注意事项：0:未发送 1:部分发送  2:未复制  3:部分复制  4:全部复制  5:未撤销  6:已撤销  7:正在撤销
+ *           0:文件未发到终端  1:文件未复制  2:文件已复制   3:文件未撤销  4:文件已撤销
  * 修改日期：2015/10/12 14:20:00
  ***********************************************************************************************************/
 j_result_t CMySQLAccess::DelFileInfo(long lFileID)
@@ -997,7 +1123,17 @@ j_result_t CMySQLAccess::DelFileInfo(long lFileID)
 
 	try
 	{
-		/// 怎样删除？
+		char strCmd[128] = { 0 };
+		sprintf(strCmd, "UPDATE transfile SET State = '6' WHERE FileID = '%d'; ", lFileID);
+		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+		if (ret == 0)
+		{
+			sprintf(strCmd, "UPDATE transfiledetail SET State = '4' WHERE FileID = '%d'; ", lFileID);
+			ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
+			return ret == 0 ? J_OK : J_DB_ERROR;
+		}
+		else
+			return J_DB_ERROR;
 	}
 	catch (...)
 	{
@@ -1006,23 +1142,30 @@ j_result_t CMySQLAccess::DelFileInfo(long lFileID)
 	return J_OK;
 }
 
+
+/***********************************************************************************************************
+ * 程序创建：刘进朝                     程序修改:赵进军
+ * 函数功能：只获取TransMessage里面状态未发送的消息
+ * 参数说明：
+ *  pHostId：设备ID
+ * contextVec：?
+ * 注意事项：null
+ * 修改日期：2015/10/31 16:06:00
+ ***********************************************************************************************************/
 j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &contextVec)
 {
 	if (!m_bConnected)
-	{
 		return J_DB_ERROR;
-	}
 
 	try
 	{
-		//mysql_set_character_set(m_mysql, "unicode");
 		char strCmd[128] = { 0 };
-		sprintf(strCmd, "SELECT MessageID FROM TransMessageDetail WHERE EquipmentID='%s';", pHostId);
+		sprintf(strCmd, "SELECT MessageID FROM TransMessageDetail WHERE EquipmentID='%s' AND State ='0';", pHostId);
 		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
 		if (ret == 0)
 		{
 			MYSQL_ROW sql_row_message_id;
-			MYSQL_RES *result_message_id = mysql_store_result(m_mysql);//保存查询到的数据到
+			MYSQL_RES *result_message_id = mysql_store_result(m_mysql);												//保存查询到的数据到
 			int nMessageID = 0;
 			if (result_message_id->row_count != 0)
 			{
@@ -1033,15 +1176,18 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 						nMessageID = atol(sql_row_message_id[0]);
 					}
 
+					if (nMessageID <= 0)
+						continue;
+
 					memset(strCmd, 0, sizeof(strCmd));
-					sprintf(strCmd, "SELECT UserID,Title,Content  FROM TransMessage WHERE MessageID=%d;", nMessageID);
+					sprintf(strCmd, "SELECT UserID,Title,Content  FROM TransMessage WHERE MessageID=%d AND DealStatus ='0';", nMessageID);
 
 					ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
 					if (ret == 0)
 					{
 						MYSQL_FIELD *fd_message;
 						MYSQL_ROW sql_row_message;
-						MYSQL_RES *result_message = mysql_store_result(m_mysql);//保存查询到的数据到
+						MYSQL_RES *result_message = mysql_store_result(m_mysql);									//保存查询到的数据到
 						if (result_message->row_count != 0)
 						{
 							int nUserID = 0;
@@ -1051,7 +1197,7 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 							char *pContent = NULL;
 
 							sql_row_message = mysql_fetch_row(result_message);
-							for (int j = 0; fd_message = mysql_fetch_field(result_message); j++)//获取列名
+							for (int j = 0; fd_message = mysql_fetch_field(result_message); j++)					//获取列名
 							{
 								if (strcmp("UserID", fd_message->name) == 0)
 								{
@@ -1061,17 +1207,15 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 								{
 									j_wstring_t wstrTitle;
 									CXlHelper::Ansi2Unicode(sql_row_message[j], wstrTitle);
-									//memcpy(pTitle, sql_row_message[j], nTitleLen);
 									nTitleLen = wstrTitle.length() * 2;
 									pTitle = new char[nTitleLen + 1];
 									memset(pTitle, 0, nTitleLen + 1);
-									memcpy(pTitle, wstrTitle.c_str(), nTitleLen);									
+									memcpy(pTitle, wstrTitle.c_str(), nTitleLen);
 								}
 								if (strcmp("Content", fd_message->name) == 0)
-								{							
+								{
 									j_wstring_t wstrContent;
 									CXlHelper::Ansi2Unicode(sql_row_message[j], wstrContent);
-									//memcpy(pContent, sql_row_message[j], nContentLen);
 									nContentLen = wstrContent.length() * 2;
 									pContent = new char[nContentLen + 1];
 									memset(pContent, 0, nContentLen + 1);
@@ -1093,32 +1237,38 @@ j_result_t CMySQLAccess::GetContextList(const char *pHostId, HostContextVec &con
 				}
 			}
 		}
-		//mysql_set_character_set(m_mysql, "gbk");
 	}
 	catch (...)
 	{
 		return J_DB_ERROR;
 	}
-
 	return J_OK;
 }
 
+
+/***********************************************************************************************************
+ * 程序创建：刘进朝                     程序修改:赵进军
+ * 函数功能：只获取TransFile里面状态未发送的文件
+ * 参数说明：
+ *  pHostId：设备ID
+ *  fileVec：文件内容
+ * 注意事项：null
+ * 修改日期：2015/10/31 16:14:00
+ ***********************************************************************************************************/
 j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &fileVec)
 {
 	if (!m_bConnected)
-	{
 		return J_DB_ERROR;
-	}
 
 	try
 	{
 		char strCmd[128] = { 0 };
-		sprintf(strCmd, "SELECT FileID FROM TransFileDetail WHERE EquipmentID='%s';", pHostId);
+		sprintf(strCmd, "SELECT FileID FROM TransFileDetail WHERE EquipmentID='%s' AND State = '0';", pHostId);
 		int ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
 		if (ret == 0)
 		{
 			MYSQL_ROW sql_row_file_id;
-			MYSQL_RES *result_file_id = mysql_store_result(m_mysql);//保存查询到的数据到
+			MYSQL_RES *result_file_id = mysql_store_result(m_mysql);												//保存查询到的数据到
 			int nFileID = 0;
 			if (result_file_id->row_count != 0)
 			{
@@ -1130,14 +1280,14 @@ j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &f
 					}
 
 					memset(strCmd, 0, sizeof(strCmd));
-					sprintf(strCmd, "SELECT UserID,Name,FilePath FROM TransFile WHERE FileID=%d;", nFileID);
+					sprintf(strCmd, "SELECT UserID,Name,FilePath FROM TransFile WHERE FileID='%d' AND State = '0';", nFileID);
 
 					ret = mysql_real_query(m_mysql, strCmd, strlen(strCmd));
 					if (ret == 0)
 					{
 						MYSQL_FIELD *fd_file;
 						MYSQL_ROW sql_row_file;
-						MYSQL_RES *result_file = mysql_store_result(m_mysql);//保存查询到的数据到
+						MYSQL_RES *result_file = mysql_store_result(m_mysql);										//保存查询到的数据到
 						if (result_file->row_count != 0)
 						{
 							int nUserID = 0;
@@ -1147,22 +1297,23 @@ j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &f
 							char *pFileName = NULL;
 
 							sql_row_file = mysql_fetch_row(result_file);
-							for (int j = 0; fd_file = mysql_fetch_field(result_file); j++)//获取列名
+							for (int j = 0; fd_file = mysql_fetch_field(result_file); j++)							//获取列名
 							{
 								if (strcmp("UserID", fd_file->name) == 0)
 								{
 									nUserID = atoi(sql_row_file[j]);
 								}
+
 								if (strcmp("Name", fd_file->name) == 0)
 								{
 									j_wstring_t wstrTitle;
 									CXlHelper::Ansi2Unicode(sql_row_file[j], wstrTitle);
-									//memcpy(pTitle, sql_row_message[j], nTitleLen);
 									nTitleLen = wstrTitle.length() * 2;
 									pTitle = new char[nTitleLen + 1];
 									memset(pTitle, 0, nTitleLen + 1);
 									memcpy(pTitle, wstrTitle.c_str(), nTitleLen);
 								}
+
 								if (strcmp("FilePath", fd_file->name) == 0)
 								{
 									nFilePathLen = strlen(sql_row_file[j]);
@@ -1182,7 +1333,6 @@ j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &f
 							pFileInfo->pFileName = pFileName;
 							fileVec.push_back(pFileInfo);
 						}
-
 					}
 				}
 			}
@@ -1192,6 +1342,148 @@ j_result_t CMySQLAccess::GetFileInfoList(const char *pHostId, HostFileInfoVec &f
 	{
 		return J_DB_ERROR;
 	}
-
 	return J_OK;
+}
+
+
+/***********************************************************************************************************
+ * 程序创建：赵进军                     程序修改:赵进军
+ * 函数功能：检查符合查询条件的数据条数
+ * 参数说明：
+ *    query：查询数据字符串
+ * 注意事项：null
+ * 修改日期：2015/10/28 11:43:00
+ ***********************************************************************************************************/
+j_int32_t CMySQLAccess::DataCount(const char *query)
+{
+	if (!m_bConnected)
+		return J_DB_ERROR;
+	int retCount = 0;
+	try
+	{
+		int ret = mysql_real_query(m_mysql, query, strlen(query));
+		if (ret == 0)
+		{
+			MYSQL_ROW sql_row_message_id;
+			MYSQL_RES *result_TotalCount = mysql_store_result(m_mysql);													//保存查询到的数据到
+			if (result_TotalCount->row_count != 0)
+			{
+				for (; sql_row_message_id = mysql_fetch_row(result_TotalCount);)
+				{
+					if (sql_row_message_id[0] != NULL)
+					{
+						retCount = atol(sql_row_message_id[0]);
+						break;
+					}
+				}
+			}
+			mysql_free_result(result_TotalCount);
+		}
+		else
+		{
+			retCount = 0;
+		}
+	}
+	catch (...)
+	{
+		retCount = 0;
+	}
+	return retCount;
+}
+
+
+/***********************************************************************************************************
+ * 程序创建：赵进军                     程序修改:赵进军
+ * 函数功能：根据指定的查询条件获取用户ID
+ * 参数说明：
+ *    query：查询数据字符串
+ * 注意事项：null
+ * 修改日期：2015/10/31 10:46:00
+ ***********************************************************************************************************/
+j_long_t CMySQLAccess::GetUserID(const char *query)
+{
+	if (!m_bConnected)
+		return -1;
+
+	long retCount = 0;
+	try
+	{
+		int ret = mysql_real_query(m_mysql, query, strlen(query));
+		if (ret == 0)
+		{
+			MYSQL_ROW sql_row_message_id;
+			MYSQL_RES *result_TotalCount = mysql_store_result(m_mysql);													//保存查询到的数据到
+			if (result_TotalCount->row_count != 0)
+			{
+				for (; sql_row_message_id = mysql_fetch_row(result_TotalCount);)
+				{
+					if (sql_row_message_id[0] != NULL)
+					{
+						retCount = atol(sql_row_message_id[0]);
+						break;
+					}
+				}
+			}
+			else
+			{
+				retCount = -1;
+			}
+			mysql_free_result(result_TotalCount);
+		}
+		else
+		{
+			retCount = -1;
+		}
+	}
+	catch (...)
+	{
+		retCount = -1;
+	}
+	return retCount;
+}
+
+
+/***********************************************************************************************************
+ * 程序创建：赵进军                     程序修改:赵进军
+ * 函数功能：根据消息ID获取对应的用户ID
+ * 参数说明：
+ * lMessageID：消息ID
+ * 注意事项：null
+ * 修改日期：2015/10/31 10:47:00
+ ***********************************************************************************************************/
+j_long_t CMySQLAccess::GetUserIDFrmMsg(long lMessageID)
+{
+	if (!m_bConnected)
+		return -1;
+	long retResult = -1;
+	char strCmd[128] = { 0 };
+	sprintf(strCmd, "SELECT UserID FROM transmessage WHERE MessageID='%d';", lMessageID);
+	retResult = GetUserID(strCmd);
+	if (retResult >= 0)
+		return retResult;
+	else
+		return -1;
+}
+
+
+/***********************************************************************************************************
+ * 程序创建：赵进军                     程序修改:赵进军
+ * 函数功能：根据文件ID获取对应的用户ID
+ * 参数说明：
+ *  lFileID：文件ID
+ * 注意事项：null
+ * 修改日期：2015/10/31 10:47:00
+ ***********************************************************************************************************/
+j_long_t CMySQLAccess::GetUserIDFrmFile(long lFileID)
+{
+	if (!m_bConnected)
+		return -1;
+	long retResult = -1;
+	char strCmd[128] = { 0 };
+	sprintf(strCmd, "SELECT UserID FROM transfile WHERE FileID='%d';", lFileID);
+	retResult = GetUserID(strCmd);
+	if (retResult >= 0)
+		return retResult;
+	else
+		return -1;
 }

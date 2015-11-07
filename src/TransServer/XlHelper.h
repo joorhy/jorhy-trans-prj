@@ -31,15 +31,6 @@ public:
 	static int Unicode2Ansi(LPCWSTR sInput, j_string_t& sOutput);
 	static int Ansi2Unicode(LPCSTR input, j_wstring_t& output);
 
-
-
-
-	static	int	Ansi2UTF8(LPCSTR sInput, j_string_t& sOutput);
-	static j_wstring_t Acsi2WideByte(j_string_t &strascii);
-	static j_string_t ASCII2UTF_8(j_string_t &strAsciiCode);
-	static j_string_t Unicode2Utf8(const j_wstring_t &widestring);
-	static j_string_t WstrToStr(const j_wstring_t& ws);
-
 	// 获取时间戳
 	static char* GetTimestamp(j_boolean_t isMillisecond);
 
@@ -51,6 +42,10 @@ public:
 
 	// 重命名联络文件的文件名
 	static j_string_t RenameFile(const j_string_t oldFileName);
+
+	// 生成GUID
+	static const char* CreateNewGuid();
+
 private:
 	// 闰年/平年判断
 	static	int IsLeap(unsigned short year);

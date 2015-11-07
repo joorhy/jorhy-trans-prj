@@ -282,7 +282,7 @@ j_result_t CRTSPClient::Play()
 		cmdData.header.flag = CXlProtocol::xl_ctrl_start;
 		strcpy(cmdData.clientRequest.realPlay.hostId, m_helper.GetHostID().c_str());
 		cmdData.clientRequest.realPlay.channel = m_helper.GetChannel();
-		cmdData.clientRequest.realPlay.pBuffer = &m_ringBuffer;
+		//cmdData.clientRequest.realPlay.pBuffer = &m_ringBuffer;
 		nResult = pHost->OnRequest(cmdData);
 	}
 
@@ -300,7 +300,7 @@ j_result_t CRTSPClient::Stop()
 		cmdData.header.flag = CXlProtocol::xl_ctrl_stop;
 		strcpy(cmdData.clientRequest.realPlay.hostId, m_helper.GetHostID().c_str());
 		cmdData.clientRequest.realPlay.channel = m_helper.GetChannel();
-		cmdData.clientRequest.realPlay.pBuffer = &m_ringBuffer;
+		//cmdData.clientRequest.realPlay.pBuffer = &m_ringBuffer;
 		nResult = pHost->OnRequest(cmdData);
 	}
 

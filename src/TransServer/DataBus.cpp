@@ -30,7 +30,7 @@ j_result_t CDataBus::RegisterDevice(j_string_t strHostId, J_DataBus *pHost)
 		if (pHost == NULL)
 		{
 			equipmentState.clientResponse.equipmentState.state = 0;
-			OnMessage(strHostId, equipmentState);
+			OnMessage("", equipmentState);
 			m_objectMap.erase(it);
 		}
 	}
@@ -40,7 +40,7 @@ j_result_t CDataBus::RegisterDevice(j_string_t strHostId, J_DataBus *pHost)
 		{
 			m_objectMap[strHostId] = pHost;
 			equipmentState.clientResponse.equipmentState.state = 1;
-			OnMessage(strHostId, equipmentState);
+			OnMessage("", equipmentState);
 		}
 	}
 	TUnlock(m_locker);
@@ -74,7 +74,7 @@ j_result_t CDataBus::ClearRequest(J_DataBus *pClient)
 	return J_OK;
 }
 
-j_result_t CDataBus::SubscribeMsg(j_string_t strUserId, J_DataBus *pClient)
+j_result_t CDataBus::SubscribeMsg(j_string_t strUserId, J_DataBus *pClient, const CXlDataBusInfo &cmdData)
 {
 	TLock(m_locker);
 	MessageMap::iterator it = m_messageMap.find(strUserId);
@@ -83,7 +83,24 @@ j_result_t CDataBus::SubscribeMsg(j_string_t strUserId, J_DataBus *pClient)
 		if (pClient == NULL)
 		{
 			/// 退订消息
-			m_messageMap.erase(it);
+			std::vector<CXlProtocol::CmdHeader>::iterator itHeader = it->second.headerVec.begin();
+			for (; itHeader != it->second.headerVec.end(); itHeader++)
+			{
+				if (cmdData.header.cmd == itHeader->cmd)
+				{
+					it->second.headerVec.erase(itHeader);
+					break;
+				}
+			}
+
+			if (it->second.headerVec.size() == 0)
+			{
+				m_messageMap.erase(it);
+			}
+		}
+		else
+		{
+			it->second.headerVec.push_back(cmdData.header);
 		}
 	}
 	else
@@ -91,7 +108,32 @@ j_result_t CDataBus::SubscribeMsg(j_string_t strUserId, J_DataBus *pClient)
 		/// 初次订阅消息,没有建立与消息的映射
 		if (pClient != NULL)
 		{
-			m_messageMap[strUserId] = pClient;
+			std::vector<CXlProtocol::CmdHeader> headerVec;
+			headerVec.push_back(cmdData.header);
+			SubMessageInfo info = {0};
+			info.pClient = pClient;
+			info.headerVec = headerVec;
+			m_messageMap[strUserId] = info;
+		}
+	}
+	TUnlock(m_locker);
+
+	return J_OK;
+}
+
+j_result_t CDataBus::ClearMessage(J_DataBus *pClient)
+{
+	TLock(m_locker);
+	MessageMap::iterator it = m_messageMap.begin();
+	for (; it != m_messageMap.end();)
+	{
+		if (it->second.pClient == pClient)
+		{
+			m_messageMap.erase(it++);
+		}
+		else
+		{
+			it++;
 		}
 	}
 	TUnlock(m_locker);
@@ -185,11 +227,32 @@ j_result_t CDataBus::Response(const CXlDataBusInfo &respData)
 j_result_t CDataBus::OnMessage(j_string_t strHostId, const CXlDataBusInfo &respData)
 {
 	TLock(m_locker);
-	MessageMap::iterator it = m_messageMap.begin();
-	for (; it != m_messageMap.end(); it++)
+	if (strHostId == "")
 	{
-		/// 发送消息
-		it->second->OnMessage(strHostId, respData);
+		MessageMap::iterator it = m_messageMap.begin();
+		for (; it != m_messageMap.end(); it++)
+		{
+			it->second.pClient->OnMessage(strHostId, respData);
+		}
+	}
+	else
+	{
+		MessageMap::iterator it = m_messageMap.begin();
+		for (; it != m_messageMap.end(); it++)
+		{
+			/// 发送消息
+			std::vector<CXlProtocol::CmdHeader>::iterator itHeader = it->second.headerVec.begin();
+			for (; itHeader != it->second.headerVec.end(); itHeader++)
+			{
+				if (respData.header.cmd == itHeader->cmd)
+				{
+					const_cast<CXlDataBusInfo &>(respData).header.seq = itHeader->seq;
+					break;
+				}
+			}
+			//it->second.pClient->OnResponse(respData);
+			it->second.pClient->OnMessage(strHostId, respData);
+		}
 	}
 	TUnlock(m_locker);
 

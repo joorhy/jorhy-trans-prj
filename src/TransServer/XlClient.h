@@ -24,7 +24,12 @@
 class CXlClient : public J_Client
 {
 	typedef std::vector<CXlDataBusInfo> RequestVec;
-	typedef std::map<j_string_t, j_boolean_t> AlarmEnableMap;
+	struct VehicleStatusEnable
+	{
+		j_boolean_t vehStatus;
+		j_boolean_t alarmInfo;
+	};
+	typedef std::map<j_string_t, VehicleStatusEnable> VehicleEnableMap;
 public:
 	CXlClient(j_socket_t nSock);
 	~CXlClient();
@@ -49,7 +54,7 @@ private:
 	j_result_t OnTalkBackData(const CXlDataBusInfo &cmdData);
 	/// 订阅消息函数
 	j_result_t SaveRequest(const CXlDataBusInfo &cmdData, j_boolean_t bSave);
-	j_result_t EnableAlarm(const CXlDataBusInfo &cmdData, j_boolean_t bEnable);
+	j_result_t EnableVehStatus(const CXlDataBusInfo &cmdData, j_boolean_t bEnable);
 	j_result_t Recovery();
 	/// 数据传输
 	j_result_t SaveContext(const CXlDataBusInfo &cmdData);
@@ -57,6 +62,8 @@ private:
 	/// 对讲
 	j_result_t TalkBackCommand(const CXlDataBusInfo &cmdData);
 	j_result_t TalkBackData(const CXlDataBusInfo &cmdData);
+	/// 回执消息
+	j_result_t MessageBack(const CXlDataBusInfo &cmdData);
 
 private:
 	j_char_t m_userName[32];						//用户名
@@ -75,7 +82,7 @@ private:
 
 	J_OS::CTLock m_locker;
 	RequestVec m_requestVec;
-	AlarmEnableMap m_alarmEnableMap;
+	VehicleEnableMap m_vehEnableMap;
 
 	/// 发送消息
 	long m_lUserID;

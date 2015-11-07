@@ -10,7 +10,12 @@ class CDataBus
 	/// 设备注册
 	typedef std::map<j_string_t, J_DataBus *> ObjectMap;
 	/// 消息订阅
-	typedef std::map<j_string_t, J_DataBus *> MessageMap;
+	struct SubMessageInfo
+	{
+		J_DataBus * pClient;
+		std::vector<CXlProtocol::CmdHeader> headerVec;
+	};
+	typedef std::map<j_string_t, SubMessageInfo> MessageMap;
 	/// 消息请求及回复
 	struct RequestKey
 	{
@@ -60,7 +65,11 @@ public:
 	/// @param[in]		pClient 订阅者对象
 	/// @param[in]		strUserId 用户ID
 	/// @return			参见j_errtype.h 
-	j_result_t SubscribeMsg(j_string_t strUserId, J_DataBus *pClient);
+	j_result_t SubscribeMsg(j_string_t strUserId, J_DataBus *pClient, const CXlDataBusInfo &cmdData);
+	/// 清除所有消息
+	/// @param[in]		pClient 请求对象
+	/// @return			参见j_errtype.h 
+	j_result_t ClearMessage(J_DataBus *pClient);
 	/// 发送请求消息
 	/// @param[in]		cmdData 请求消息内容
 	/// @param[in]		pClient 请求者
