@@ -81,7 +81,7 @@ public:
 	/// @param[in]		pClient 请求者
 	/// @param[in]		nTimeOut 请求超时时间,单位ms 
 	/// @return			参见j_errtype.h 
-	j_result_t RequestMessage(j_string_t strHostId, J_DataBus *pClient, const CXlDataBusInfo &cmdData);
+	j_result_t RequestStateless(j_string_t strHostId, J_DataBus *pClient, const CXlDataBusInfo &cmdData);
 	/// 请求应答消息
 	/// @param[in]		respData 应答消息内容
 	/// @return			参见j_errtype.h 
@@ -113,7 +113,6 @@ private:
 	MessageMap m_messageMap;
 	RequestMap m_requestMap;
 	ResponseMap m_responseMap;
-	RequestTimeOutMap m_requestTimeOutMap;
 };
 
 JO_DECLARE_SINGLETON(DataBus)

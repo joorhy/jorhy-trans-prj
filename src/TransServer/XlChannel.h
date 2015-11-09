@@ -17,7 +17,6 @@
 #define __XLCHANNEL_H_
 #include "j_includes.h"
 #include "XlDataBusDef.h"
-#include "HikSdkParser2.h"
 
 /// 本类的功能:  流管理类
 class CXlChannel : public J_Channel
@@ -44,31 +43,6 @@ public:
 	j_result_t InputData(const j_int32_t nType, const CXlDataBusInfo *respData);
 
 private:
-	int AddRingBuffer(CRingBuffer *pRingBuffer)
-	{
-		TLock(m_vecLocker);
-		m_vecRingBuffer.push_back(pRingBuffer);
-		TUnlock(m_vecLocker);
-
-		return J_OK;
-	}
-	int DelRingBuffer(CRingBuffer *pRingBuffer)
-	{
-		TLock(m_vecLocker);
-		std::vector<CRingBuffer *>::iterator it = m_vecRingBuffer.begin();
-		for (; it != m_vecRingBuffer.end(); it++)
-		{
-			if (*it == pRingBuffer)
-			{
-				m_vecRingBuffer.erase(it);
-				TUnlock(m_vecLocker);
-
-				return J_OK;
-			}
-		}
-		TUnlock(m_vecLocker);
-		return J_NOT_EXIST;
-	}
 	int AddCmdHeader(const CXlProtocol::CmdHeader &cmdHeader)
 	{
 		TLock(m_vecLocker);
@@ -97,12 +71,9 @@ private:
 private:
 	j_int32_t m_nChannelNum;
 	J_OS::TLocker_t m_vecLocker;
-	std::vector<CRingBuffer *> m_vecRingBuffer;
 	J_OS::TLocker_t m_mapLocker;
-	std::map<j_guid_t, CRingBuffer *> m_mapRingBuffer;
 	std::vector<CXlProtocol::CmdHeader> m_vecCmdHeader;
 
-	CHikSdkParser2 m_parser;
 	char *m_pDataBuff;
 };
 

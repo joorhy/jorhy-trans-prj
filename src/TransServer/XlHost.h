@@ -98,8 +98,6 @@ private:
 	J_StreamHeader m_streamHeader;					//视频队列头信
 	CRingBuffer m_ringBuffer;
 
-	J_OS::TLocker_t m_vecClientLocker;
-	std::vector<J_Client *> m_vecClient;
 	std::map<int, int> m_seqMap;
 
 	HostContextVec m_contextVec;

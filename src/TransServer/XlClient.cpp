@@ -314,13 +314,13 @@ j_result_t CXlClient::OnHeartBeat(const CXlDataBusInfo &cmdData)
 
 j_result_t CXlClient::OnTalkBackCommand(const CXlDataBusInfo &cmdData)
 {
-	JoDataBus->RequestMessage(cmdData.clientRequest.talkCmd.equID, this, cmdData);
+	JoDataBus->RequestStateless(cmdData.clientRequest.talkCmd.equID, this, cmdData);
 	return J_OK;
 }
 
 j_result_t CXlClient::OnTalkBackData(const CXlDataBusInfo &cmdData)
 {
-	JoDataBus->RequestMessage(cmdData.clientRequest.talkData.equID, this, cmdData);
+	JoDataBus->RequestStateless(cmdData.clientRequest.talkData.equID, this, cmdData);
 	return J_OK;
 }
 

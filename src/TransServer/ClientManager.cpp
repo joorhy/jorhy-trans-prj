@@ -16,8 +16,6 @@
 #include "x_asio_win.h"
 #include "ClientManager.h"
 #include "XlClient.h"
-#include "RtspClient.h"
-#include "MsSqlServer.h"
 #include "MySQLAccess.h"
 
 JO_IMPLEMENT_SINGLETON(ClientManager)
@@ -85,10 +83,6 @@ J_Client *CClientManager::CreateClientObj(j_socket_t nSock, j_int32_t clientType
 	if (clientType == XL_CLIENT)
 	{
 		pClient = new CXlClient(nSock);
-	}
-	else if (clientType == RTSP_CLIENT)
-	{
-		pClient = new CRTSPClient(nSock);
 	}
 
 	if (pClient != NULL)

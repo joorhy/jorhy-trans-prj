@@ -19,7 +19,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>v120_xp</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -88,72 +88,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\faac\aacquant.c" />
-    <ClCompile Include="..\..\src\faac\backpred.c" />
-    <ClCompile Include="..\..\src\faac\bitstream.c" />
-    <ClCompile Include="..\..\src\faac\channels.c" />
-    <ClCompile Include="..\..\src\faac\fft.c" />
-    <ClCompile Include="..\..\src\faac\filtbank.c" />
-    <ClCompile Include="..\..\src\faac\frame.c" />
-    <ClCompile Include="..\..\src\faac\huffman.c" />
-    <ClCompile Include="..\..\src\faac\ltp.c" />
-    <ClCompile Include="..\..\src\faac\midside.c" />
-    <ClCompile Include="..\..\src\faac\psychkni.c" />
-    <ClCompile Include="..\..\src\faac\tns.c" />
-    <ClCompile Include="..\..\src\faac\util.c" />
-    <ClCompile Include="..\..\src\TransServer\AudioConvert.cpp" />
     <ClCompile Include="..\..\src\TransServer\ClientManager.cpp" />
-    <ClCompile Include="..\..\src\TransServer\DahuaChannel.cpp" />
-    <ClCompile Include="..\..\src\TransServer\DahuaHost.cpp" />
     <ClCompile Include="..\..\src\TransServer\DataBus.cpp" />
     <ClCompile Include="..\..\src\TransServer\DeviceManager.cpp" />
-    <ClCompile Include="..\..\src\TransServer\HikSdkParser2.cpp" />
     <ClCompile Include="..\..\src\TransServer\MySQLAccess.cpp" />
-    <ClCompile Include="..\..\src\TransServer\RtspClient.cpp" />
-    <ClCompile Include="..\..\src\TransServer\MsSqlServer.cpp" />
-    <ClCompile Include="..\..\src\TransServer\RTPStream.cpp" />
-    <ClCompile Include="..\..\src\TransServer\RtspHelper.cpp" />
     <ClCompile Include="..\..\src\TransServer\TcpServer4Client.cpp" />
-    <ClCompile Include="..\..\src\TransServer\TCPServer4Dahua.cpp" />
     <ClCompile Include="..\..\src\TransServer\TcpServer4Device.cpp" />
-    <ClCompile Include="..\..\src\TransServer\TcpServer4RTSP.cpp" />
-    <ClCompile Include="..\..\src\TransServer\TCPServer4Vdms.cpp" />
     <ClCompile Include="..\..\src\TransServer\TransServer.cpp" />
-    <ClCompile Include="..\..\src\TransServer\VnChannel.cpp" />
-    <ClCompile Include="..\..\src\TransServer\VnHost.cpp" />
     <ClCompile Include="..\..\src\TransServer\XlChannel.cpp" />
     <ClCompile Include="..\..\src\TransServer\XlClient.cpp" />
     <ClCompile Include="..\..\src\TransServer\XlHelper.cpp" />
     <ClCompile Include="..\..\src\TransServer\XlHost.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\src\TransServer\AudioConvert.h" />
     <ClInclude Include="..\..\src\TransServer\ClientManager.h" />
-    <ClInclude Include="..\..\src\TransServer\DahuaChannel.h" />
-    <ClInclude Include="..\..\src\TransServer\DahuaHost.h" />
     <ClInclude Include="..\..\src\TransServer\DataBus.h" />
     <ClInclude Include="..\..\src\TransServer\DeviceManager.h" />
-    <ClInclude Include="..\..\src\TransServer\HikSdkParser2.h" />
     <ClInclude Include="..\..\src\TransServer\MySQLAccess.h" />
-    <ClInclude Include="..\..\src\TransServer\RtspClient.h" />
-    <ClInclude Include="..\..\src\TransServer\MsSqlServer.h" />
-    <ClInclude Include="..\..\src\TransServer\RTPStream.h" />
-    <ClInclude Include="..\..\src\TransServer\RtspDef.h" />
-    <ClInclude Include="..\..\src\TransServer\RtspHelper.h" />
     <ClInclude Include="..\..\src\TransServer\TcpServer4Client.h" />
-    <ClInclude Include="..\..\src\TransServer\TCPServer4Dahua.h" />
     <ClInclude Include="..\..\src\TransServer\TcpServer4Device.h" />
-    <ClInclude Include="..\..\src\TransServer\TcpServer4RTSP.h" />
-    <ClInclude Include="..\..\src\TransServer\TCPServer4Vdms.h" />
-    <ClInclude Include="..\..\src\TransServer\VnChannel.h" />
-    <ClInclude Include="..\..\src\TransServer\VnHost.h" />
     <ClInclude Include="..\..\src\TransServer\XlChannel.h" />
     <ClInclude Include="..\..\src\TransServer\XlClient.h" />
     <ClInclude Include="..\..\src\TransServer\XlDataBusDef.h" />
     <ClInclude Include="..\..\src\TransServer\XlHelper.h" />
     <ClInclude Include="..\..\src\TransServer\XlHost.h" />
     <ClInclude Include="..\..\src\TransServer\XlProtocol.h" />
-    <ClInclude Include="..\..\src\TransServer\x_base64.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

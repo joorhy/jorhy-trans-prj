@@ -65,7 +65,7 @@ namespace XlClientRequest
 	struct TalkData
 	{
 		char account[32];	 	///< 账户名
-		char equID[32];		///< 设备ID
+		char equID[32];			///< 设备ID
 		unsigned int size;		///< 数据区长度
 	};
 }
@@ -134,8 +134,8 @@ namespace XlClientResponse
 
 	struct TalkCmd
 	{
-		char account[32];   	///< 账户名
-		char equID[32];			///< 设备ID
+		char account[32];   			///< 账户名
+		char equID[32];					///< 设备ID
 		int state;
 
 	};
@@ -152,17 +152,17 @@ namespace XlHostRequest
 {
 	struct ConrrectTime
 	{
-		time_t systime;				///< ??C?I?I3E??a
+		time_t systime;				///< 系统时间
 	};
 
 	struct ConfigDev
 	{
-		char szID[32];             	//EeOAID
-		char szVehicleID[32];       //3?oA
-		ULONG ulPhoneNum;           //?c>?oAAe
-		int nTotalChannels;         //I??A,oEu
-		int nTypeSize;				//EaInI.AaDI
-		int nNameSize;		  		//I??AAu3A3$?E???O!?#!?,o?a
+		char szID[32];             	///< 设备ID
+		char szVehicleID[32];       ///< 列车号
+		ULONG ulPhoneNum;           ///< 电话号码
+		int nTotalChannels;         ///< 通道数目
+		int nTypeSize;				///< 媒体类型长度
+		int nNameSize;		  		///< 通道名称长度
 	};
 
 	struct VehiclleStatus
@@ -184,49 +184,49 @@ namespace XlHostRequest
 
 	struct RealPlay
 	{
-		char szID[32];              //3?A?ID
-		long long llChnStatus; 		//I??A?aAo??`?  ?i?oO?3O64,oI??A
+		char szID[32];              ///< 设备ID
+		long long llChnStatus; 		///< 通道号
 	};
 
 	struct StartVod
 	{
-		GUID session;				//>O.Asession
-		char szID[32];				//3?A?ID 
-		long long llChnStatus; 		//I??A?aAo??`?  ?i?oO?3O64,oI??A
-		time_t tmStartTime;			//>O.A?aE?E??a
-		time_t tmEndTime;			//>O.A?aEoE??a!?Eo>O.A??IOOU??EeOAIa-1
+		GUID session;				///< 回话ID
+		char szID[32];				///< 设备ID
+		long long llChnStatus; 		///< 通道号
+		time_t tmStartTime;			///< 开始时间
+		time_t tmEndTime;			///< 结束时间
 	};
 
 	struct StopVod
 	{
-		GUID session;				//>O.Asession
-		char szID[32];				//3?A?ID
-		long long llChnStatus; 		//I??A?aAo/1O?O??`?  ?i?oO?3O64,oI??A
+		GUID session;				///< 回话ID
+		char szID[32];				///< 设备ID
+		long long llChnStatus; 		///< 通道号
 	};
 
 	struct OnOffInfo
 	{
-		time_t tmStart;				//?aE?E??a, EoE!?AEuOD?AEOO?tmStartIa-1
-		time_t tmEnd;				//?aEoE??a, EoE!?AEuOD?AEOO?tmEndIa-1
+		time_t tmStart;				///< 开始时间
+		time_t tmEnd;				///< 结束时间
 	};
 
 	struct UpdateVodAck
 	{
-		unsigned char  code;		///< 0-3E1|, 1-E??U
+		unsigned char  code;		///< 0-失败, 1-成功
 	};
 
 	struct ContextInfo
 	{
 		struct ContextHeader
 		{
-			long lUserID;                             ///< OA>?ID 
+			long lUserID;                             ///< 用户ID 
 			long lMessageID;                          ///< 消息ID 
-			int nMessageTitleSize;  				  ///< IuIc?eIa3$?E
-			unsigned long ulMessageSize;			  ///< IuIcAUEY3$?E
+			int nMessageTitleSize;  				  ///< 消息标题长度
+			unsigned long ulMessageSize;			  ///< 消息体长度
 			char data[1];
 		};
 
-		char *pContext;								  ///< IuIcAUEY
+		char *pContext;								  ///< 消息内容
 		union
 		{
 			ContextHeader header;
@@ -256,7 +256,7 @@ namespace XlHostRequest
 	struct TalkCmd
 	{
 		char account[32];   	///< 账户名
-		char equID[32];		///< 设备ID
+		char equID[32];			///< 设备ID
 		int state;
 
 	};
@@ -264,7 +264,7 @@ namespace XlHostRequest
 	struct TalkData
 	{
 		char account[32];	 	///< 账户名
-		char equID[32];		///< 设备ID
+		char equID[32];			///< 设备ID
 		unsigned int size;		///< 数据区长度
 	};
 }
@@ -276,28 +276,28 @@ namespace XlHostResponse
 		struct TransFile
 		{
 			long lFileID;
-			int nState;   	  //0 拷贝成功 
-			time_t tmTime;    //拷贝完成时的时间
+			int nState;   		///< 0 拷贝成功 
+			time_t tmTime;		///< 拷贝完成时的时间
 		};
 
 		struct TransMessage
 		{
 			long lMessageID;
-			int nState;      //0 消息已读 
-			time_t tmTime;   //消息已读时的时间
+			int nState;			///< 0 消息已读 
+			time_t tmTime;		///< 消息已读时的时间
 		};
 
 		struct CamaraStatus
 		{
-			int nStatusSize;	//摄像头状态
-			time_t tmTime;		//检测时间
+			int nStatusSize;	///< 摄像头状态
+			time_t tmTime;		///< 检测时间
 		};
 
 		struct TransMessageReceive
 		{
-			long lUserID;		//用户ID
-			int nTitleSize;		//消息标题
-			int nContentSize;	//消息内容
+			long lUserID;		///< 用户ID
+			int nTitleSize;		///< 消息标题
+			int nContentSize;	///< 消息内容
 		};
 
 		char szID[32];					///< 车号

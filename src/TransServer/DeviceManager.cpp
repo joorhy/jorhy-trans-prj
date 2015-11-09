@@ -15,8 +15,6 @@
 ///////////////////////////////////////////////////////////////////////////  
 #include "DeviceManager.h"
 #include "XlHost.h"
-#include "VnHost.h"
-#include "DahuaHost.h"
 
 JO_IMPLEMENT_SINGLETON(DeviceManager)
 
@@ -41,12 +39,6 @@ J_Host *CDeviceManager::CreateDevObj(j_int32_t nHostType, j_string_t strHostId, 
 			{
 			case 1://XlHost
 				pHost = new CXlHost(strHostId, nParam);
-				break;
-			case 2://VnHost
-				pHost = new CVnHost(strHostId);
-				break;
-			case 3://DahuaHost
-				pHost = new CDahuaHost(strHostId, nParam);
 				break;
 			default:
 				break;

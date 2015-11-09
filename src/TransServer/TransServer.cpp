@@ -15,11 +15,6 @@
 ///////////////////////////////////////////////////////////////////////////  
 #include "TcpServer4Client.h"
 #include "TcpServer4Device.h"
-#include "TcpServer4RTSP.h"
-#include "TCPServer4Vdms.h"
-#include "TCPServer4Dahua.h"
-
-#include "MsSqlServer.h"
 #include "MySQLAccess.h"
 
 #ifdef _DEBUG
@@ -30,36 +25,11 @@
 
 CTcpServer4Device g_deviceServer;
 CTcpServer4Client g_clientServer;
-CTcpServer4Vdms g_vdmsServer;
-CTcpServer4RTSP g_rtspServer;
-CTcpServer4Dahua g_dahuaServer;
 
 const char *g_ini_file = ".//TranServer.ini";
 
 int main(int argc, char **argv)
 {
-	///初始化平台
-	UINT loc_Result = GetPrivateProfileInt("platform", "enable", 0, g_ini_file);
-
-	if (GetPrivateProfileInt("platform", "enable", 0, g_ini_file) == 1)
-	{
-		if (g_vdmsServer.StartServer(g_ini_file) != J_OK)
-		{
-			J_OS::LOGINFO("初始化平台失败");
-			//return -1;
-		}
-	}
-
-	///启动RTSP监听服务
-	if (GetPrivateProfileInt("rtsp", "enable", 0, g_ini_file) == 1)
-	{
-		if (g_rtspServer.StartServer(g_ini_file) != J_OK)
-		{
-			J_OS::LOGINFO("启动RTSP听服务失败");
-			//return -1;
-		}
-	}
-
 	///初始化数据库
 	if (GetPrivateProfileInt("data_base", "enable", 0, g_ini_file) == 1)
 	{
@@ -98,16 +68,6 @@ int main(int argc, char **argv)
 		}
 	}
 
-	///启动大华监听服务
-	if (GetPrivateProfileInt("dahua", "enable", 0, g_ini_file) == 1)
-	{
-		if (g_dahuaServer.StartServer(g_ini_file) != J_OK)
-		{
-			J_OS::LOGINFO("启动大华监听服务失败");
-			//return -1;
-		}
-	}
-
 	while (true)
 	{
 		Sleep(100);
@@ -118,12 +78,6 @@ int main(int argc, char **argv)
 	///停止设备监听服务
 	g_deviceServer.StopServer();
 	///停止平台服务
-	g_vdmsServer.StopServer();
-	///停止RTSP服务
-	g_rtspServer.StopServer();
-	///停止大华监听服务
-	g_dahuaServer.StopServer();
-	///注销数据库连接
 	JoDataBaseObj->Release();
 
 	return 0;

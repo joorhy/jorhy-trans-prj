@@ -15,7 +15,6 @@
 /////////////////////////////////////////////////////////////////////////// 
 #include "XlHost.h"
 #include "XlChannel.h"
-#include "MsSqlServer.h"
 #include "MySQLAccess.h"
 #include "XlHelper.h"
 #include "ClientManager.h"
@@ -308,7 +307,7 @@ j_result_t CXlHost::OnMessage(const CXlDataBusInfo &cmdData)
 			j_string_t strUserName;
 			JoDataBaseObj->GetUserNameById(nUserID, strUserName);
 			if (strUserName != "")
-				JoDataBus->RequestMessage(strUserName, this, cmdData);
+				JoDataBus->RequestStateless(strUserName, this, cmdData);
 		}
 		break;
 	case CXlProtocol::xld_message_recived:																			// 消息被接收
@@ -321,7 +320,7 @@ j_result_t CXlHost::OnMessage(const CXlDataBusInfo &cmdData)
 			j_string_t strUserName;
 			JoDataBaseObj->GetUserNameById(nUserID, strUserName);
 			if (strUserName != "")
-				JoDataBus->RequestMessage(strUserName, this, cmdData);
+				JoDataBus->RequestStateless(strUserName, this, cmdData);
 		}
 		break;
 	default:
@@ -470,14 +469,14 @@ j_result_t CXlHost::OnRealData(const CXlDataBusInfo *respData)
 j_result_t CXlHost::OnTalkBackCommand(const CXlDataBusInfo &respData)
 {
 	const_cast<CXlDataBusInfo &>(respData).header.cmd = CXlProtocol::xlc_talk_cmd_in;
-	JoDataBus->RequestMessage(respData.hostResponse.talkCmd.account, this, respData);
+	JoDataBus->RequestStateless(respData.hostResponse.talkCmd.account, this, respData);
 	return J_OK;
 }
 
 j_result_t CXlHost::OnTalkBackData(const CXlDataBusInfo &respData)
 {
 	const_cast<CXlDataBusInfo &>(respData).header.cmd = CXlProtocol::xlc_talk_data_in;
-	JoDataBus->RequestMessage(respData.hostResponse.talkData.account, this, respData);
+	JoDataBus->RequestStateless(respData.hostResponse.talkData.account, this, respData);
 	return J_OK;
 }
 
@@ -491,55 +490,48 @@ j_result_t CXlHost::OnVodData(const CXlDataBusInfo *respData)
 {
 	TLock(m_channelLocker);
 	J_OS::LOGINFO("OnVodData seq = %d", respData->header.seq);
-	std::map<int, int>::iterator itSeq = m_seqMap.find(respData->header.seq);
-	if (itSeq != m_seqMap.end())
+	ChannelMap::iterator it = m_channelMap.find(respData->header.seq);
+	if (it != m_channelMap.end())
 	{
-		ChannelMap::iterator it = m_channelMap.find(itSeq->second);
-		J_OS::LOGINFO("CXlHost::OnVodData channel = %d %d", itSeq->second, respData->header.flag);
-		if (it != m_channelMap.end())
+		CXlChannel *pXlChannel = dynamic_cast<CXlChannel *>(it->second.pChannel);
+		if (pXlChannel != NULL)
 		{
-			CXlChannel *pXlChannel = dynamic_cast<CXlChannel *>(it->second.pChannel);
+			pXlChannel->InputData(CXlProtocol::xl_ctrl_stream, respData);
+		}
+
+		if (respData->header.flag == CXlProtocol::xl_ctrl_end || respData->header.flag == CXlProtocol::xl_ctrl_stop)
+		{
+			J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->hostResponse.vodData.channel & 0xFF);
+			J_OS::LOGINFO("File TotleSize = %d", m_nDownloadSize);
 			if (pXlChannel != NULL)
 			{
-				pXlChannel->InputData(CXlProtocol::xl_ctrl_stream, respData);
+				CXlDataBusInfo *cmdData = (CXlDataBusInfo *)respData;
+				pXlChannel->CloseVod(*cmdData);
 			}
 
-			if (respData->header.flag == CXlProtocol::xl_ctrl_end || respData->header.flag == CXlProtocol::xl_ctrl_stop)
+			if (respData->header.flag == CXlProtocol::xl_ctrl_end)
 			{
-				J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->hostResponse.vodData.channel & 0xFF);
-				J_OS::LOGINFO("File TotleSize = %d", m_nDownloadSize);
-				if (pXlChannel != NULL)
+				it->second.nRef--;
+				if (it->second.nRef < 0)
 				{
-					CXlDataBusInfo *cmdData = (CXlDataBusInfo *)respData;
-					pXlChannel->CloseVod(*cmdData);
+					it->second.nRef = 0;
 				}
-
-				if (respData->header.flag == CXlProtocol::xl_ctrl_end)
-				{
-					it->second.nRef--;
-					if (it->second.nRef < 0)
-					{
-						it->second.nRef = 0;
-					}
-				}
-
-				if (it->second.nRef == 0)
-				{
-					ReleaseChannel(respData->hostResponse.vodData.channel);
-				}
-
-				m_seqMap.erase(itSeq);
 			}
-			else
+
+			if (it->second.nRef == 0)
 			{
-				m_nDownloadSize += respData->header.length;
+				ReleaseChannel(respData->hostResponse.vodData.channel);
 			}
 		}
 		else
 		{
-			J_OS::LOGINFO("CXlHost::OnVodData Error");
-			J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->hostResponse.vodData.channel & 0xFF);
+			m_nDownloadSize += respData->header.length;
 		}
+	}
+	else
+	{
+		J_OS::LOGINFO("CXlHost::OnVodData Error");
+		J_OS::LOGINFO("CXlHost::OnVodData channel = %d", respData->hostResponse.vodData.channel & 0xFF);
 	}
 	TUnlock(m_channelLocker);
 
@@ -689,11 +681,11 @@ j_result_t CXlHost::StopRealPlay(const CXlDataBusInfo &cmdData)
 j_result_t CXlHost::StartVod(const CXlDataBusInfo &cmdData)
 {
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.clientRequest.vodPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.header.seq);
 	if (it == m_channelMap.end())
 	{
 		J_Obj *pObj = NULL;
-		CreateChannel(cmdData.clientRequest.vodPlay.channel, pObj);
+		CreateChannel(cmdData.header.seq, pObj);
 		if (pObj != NULL)
 		{
 			J_Vod *pChannel = dynamic_cast<J_Vod *>(pObj);
@@ -733,7 +725,6 @@ j_result_t CXlHost::StartVod(const CXlDataBusInfo &cmdData)
 
 		++(it->second.nRef);
 	}
-	m_seqMap[cmdData.header.seq] = cmdData.clientRequest.vodPlay.channel;
 	TUnlock(m_channelLocker);
 
 	return J_OK;
@@ -743,7 +734,7 @@ j_result_t CXlHost::StartVod(const CXlDataBusInfo &cmdData)
 j_result_t CXlHost::StopVod(const CXlDataBusInfo &cmdData)
 {
 	TLock(m_channelLocker);
-	ChannelMap::iterator it = m_channelMap.find(cmdData.clientRequest.vodPlay.channel);
+	ChannelMap::iterator it = m_channelMap.find(cmdData.header.seq);
 	if (it != m_channelMap.end())
 	{
 		--(it->second.nRef);

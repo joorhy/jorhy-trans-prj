@@ -7,7 +7,6 @@ CXlChannel::CXlChannel(J_Obj *pOwner, j_int32_t nChannel)
 {
 	m_pDataBuff = NULL;
 	m_nChannelNum = nChannel;
-	m_parser.Init();
 	if (NULL == m_pDataBuff)
 	{
 		m_pDataBuff = new char[RECV_SIZE];
@@ -16,7 +15,6 @@ CXlChannel::CXlChannel(J_Obj *pOwner, j_int32_t nChannel)
 
 CXlChannel::~CXlChannel()
 {
-	m_parser.Deinit();
 	if (m_pDataBuff != NULL)
 	{
 		delete m_pDataBuff;

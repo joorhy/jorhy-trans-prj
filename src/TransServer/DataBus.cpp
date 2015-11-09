@@ -159,7 +159,6 @@ j_result_t CDataBus::Request(j_string_t strHostId, J_DataBus *pClient, const CXl
 		{
 			const_cast<CXlDataBusInfo &>(cmdData).header.seq = it->second.nSeq;
 			itHost->second->OnRequest(cmdData);
-			//m_requestMap.erase(it);
 		}
 	}
 	else
@@ -167,8 +166,7 @@ j_result_t CDataBus::Request(j_string_t strHostId, J_DataBus *pClient, const CXl
 		/// 请求数据
 		j_uint32_t nSeq = GetUniqueSeq();
 		m_responseMap[nSeq] = key;
-		const_cast<CXlDataBusInfo &>(cmdData).header.seq = nSeq;
-
+		
 		RequestInfo info = {0};
 		info.pClient = pClient;
 		info.cmdHeader = cmdData.header;
@@ -176,13 +174,14 @@ j_result_t CDataBus::Request(j_string_t strHostId, J_DataBus *pClient, const CXl
 		info.nSeq = nSeq;
 		m_requestMap[key] = info;
 
+		const_cast<CXlDataBusInfo &>(cmdData).header.seq = nSeq;
 		itHost->second->OnRequest(cmdData);
 	}
 	TUnlock(m_locker);
 	return J_OK;
 }
 
-j_result_t CDataBus::RequestMessage(j_string_t strHostId, J_DataBus *pClient, const CXlDataBusInfo &cmdData)
+j_result_t CDataBus::RequestStateless(j_string_t strHostId, J_DataBus *pClient, const CXlDataBusInfo &cmdData)
 {
 	TLock(m_locker);
 	ObjectMap::iterator itHost = m_objectMap.find(strHostId);
@@ -205,10 +204,16 @@ j_result_t CDataBus::Response(const CXlDataBusInfo &respData)
 	{
 		/// 删除请求记录
 		RequestMap::iterator itReqest = m_requestMap.find(it->second);
-		if (itReqest != m_requestMap.end()
-			&& (respData.header.flag == CXlProtocol::xl_ctrl_end || respData.header.flag == CXlProtocol::xl_ctrl_stop))
+		if (itReqest != m_requestMap.end())
 		{
-			m_requestMap.erase(itReqest);
+			if (respData.header.flag == CXlProtocol::xl_ctrl_end || respData.header.flag == CXlProtocol::xl_ctrl_stop)
+			{
+				m_requestMap.erase(itReqest);
+			}
+			else if (respData.header.flag == CXlProtocol::xl_ctrl_data)
+			{
+				itReqest->second.nTimeOut = 3000;
+			}
 		}
 
 		/// 回复数据
@@ -250,7 +255,6 @@ j_result_t CDataBus::OnMessage(j_string_t strHostId, const CXlDataBusInfo &respD
 					break;
 				}
 			}
-			//it->second.pClient->OnResponse(respData);
 			it->second.pClient->OnMessage(strHostId, respData);
 		}
 	}
@@ -263,31 +267,26 @@ void CDataBus::CheckState()
 {
 	TLock(m_locker);
 	RequestMap::iterator it = m_requestMap.begin();
-	for (; it != m_requestMap.end(); ++it)
+	for (; it != m_requestMap.end();)
 	{
 		/// 判断是否超时
 		if (it->second.nTimeOut > 0)
 		{
 			it->second.nTimeOut -= 1000;
+			it++;
 		}
 		else
 		{
-			/// 超时处理
-			m_requestTimeOutMap[it->first] = it->second.pClient;
 			/// 发送超时消息
 			CXlDataBusInfo respData = { 0 };
 			respData.header = it->second.cmdHeader;
+			respData.header.length = 0;
+			respData.header.flag = CXlProtocol::xl_ctrl_stop;
 
-			//it->second.pClient->OnResponse(respData);
+			it->second.pClient->OnResponse(respData);
+			m_responseMap.erase(it->second.nSeq);
+			m_requestMap.erase(it++);
 		}
 	}
-	RequestTimeOutMap::iterator itTimeOut = m_requestTimeOutMap.begin();
-	for (; itTimeOut != m_requestTimeOutMap.end(); ++itTimeOut)
-	{
-		/// 删除消息
-		//m_requestMap.erase(itTimeOut->first);
-		//m_responseMap.erase(itTimeOut->first.nSeq);
-	}
-	m_requestTimeOutMap.clear();
 	TUnlock(m_locker);
 }

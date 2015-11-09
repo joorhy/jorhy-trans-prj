@@ -30,7 +30,6 @@
 ///据库接口对象
 #define JoDataBaseObj \
 	JO_INSTANSE(MySQLAccess)
-	//JO_INSTANSE(SqlServerAccess)
 
 ///FTP服务器管理对象
 #define JoHostManager \
